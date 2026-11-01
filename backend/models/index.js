@@ -1,0 +1,10 @@
+module.exports = {
+  User: require('./User'),
+  Category: require('./Category'),
+  Counter: require('./Counter'),
+  Complaint: require('./Complaint'),
+  Attachment: require('./Attachment'),
+  ComplaintStatusHistory: require('./ComplaintStatusHistory'),
+  Feedback: require('./Feedback'),
+  Notification: require('./Notification'),
+};

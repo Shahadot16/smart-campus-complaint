@@ -1,0 +1,93 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-navy-950: #0b2440;
+  --color-navy-900: #12395f;
+  --color-navy-800: #184a78;
+  --color-navy-700: #1f5b91;
+  --color-brand-50: #eef6fd;
+  --color-brand-100: #d6e9f8;
+  --color-brand-200: #aed3f1;
+  --color-brand-500: #2a78d6;
+  --color-brand-600: #1b6fa8;
+  --color-brand-700: #175d8d;
+  --color-surface: #f3f7fb;
+  --color-ink: #1e2b3c;
+  --color-ink-soft: #52627a;
+  --color-ink-muted: #7b8aa0;
+  --color-line: #dfe7f0;
+
+  --shadow-card: 0 1px 2px rgb(16 42 76 / 0.05), 0 1px 3px rgb(16 42 76 / 0.06);
+  --shadow-pop: 0 10px 30px -10px rgb(16 42 76 / 0.25);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-surface text-ink font-sans;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}
+
+@utility card {
+  @apply rounded-xl border border-line bg-white shadow-card;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition
+    disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer whitespace-nowrap;
+}
+@utility btn-primary {
+  @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-navy-800;
+}
+@utility btn-secondary {
+  @apply btn border border-line bg-white text-ink hover:bg-slate-50;
+}
+@utility btn-ghost {
+  @apply btn text-ink-soft hover:bg-slate-100 hover:text-ink;
+}
+@utility btn-danger {
+  @apply btn bg-red-600 text-white hover:bg-red-700;
+}
+@utility btn-success {
+  @apply btn bg-emerald-600 text-white hover:bg-emerald-700;
+}
+@utility btn-sm {
+  @apply px-3 py-1.5 text-xs;
+}
+@utility label {
+  @apply mb-1.5 block text-sm font-medium text-ink;
+}
+@utility input {
+  @apply block w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-muted
+    transition focus:border-brand-500 focus:ring-3 focus:ring-brand-100 focus:outline-none
+    disabled:bg-slate-50 disabled:text-ink-muted;
+}
+@utility input-error {
+  @apply border-red-400 focus:border-red-500 focus:ring-red-100;
+}
+@utility field-error {
+  @apply mt-1 text-xs text-red-600;
+}
+@utility chip {
+  @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
+}
+@utility table-head {
+  @apply px-4 py-3 text-left text-xs font-semibold tracking-wide text-ink-soft uppercase;
+}
+@utility table-cell {
+  @apply px-4 py-3 text-sm;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
