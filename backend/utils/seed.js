@@ -4,19 +4,23 @@
  *   npm run seed -- --reset -> wipe all collections and reseed
  * Admin credentials can be overridden with SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
  */
-const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification } = require('../models');
+const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department } = require('../models');
+const university = require('../config/university');
 
 const DEMO_PASSWORDS = { admin: 'Admin@123', staff: 'Staff@123', student: 'Student@123' };
 
 const CATEGORIES = [
-  ['Network', 'Wi-Fi, LAN and internet connectivity'],
-  ['Electrical', 'Lights, fans, sockets and power supply'],
-  ['Cleaning', 'Washrooms, classrooms and common areas'],
-  ['Equipment', 'Projectors, computers and lab equipment'],
-  ['Plumbing', 'Water supply, taps and leakages'],
-  ['Furniture', 'Desks, chairs and boards'],
-  ['Security', 'Doors, locks, CCTV and safety concerns'],
+  ['Network & IT', 'Wi-Fi, LAN, internet, lab computers and software'],
+  ['Electrical', 'Lights, fans, sockets, power supply and generators'],
+  ['Lab Equipment', 'Engineering lab machines, instruments and test benches'],
+  ['AC & Ventilation', 'Air conditioners, exhaust fans and ventilation'],
+  ['Plumbing', 'Water supply, taps, drains and leakages'],
+  ['Cleaning', 'Washrooms, classrooms, labs and common areas'],
+  ['Furniture', 'Desks, chairs, whiteboards and lab benches'],
+  ['Safety & Security', 'Doors, locks, CCTV, fire safety and hazards'],
 ];
+
+const DOMAIN = university.emailDomain;
 
 const day = 24 * 60 * 60 * 1000;
 const ago = (days, hours = 0) => new Date(Date.now() - days * day - hours * 36e5);
@@ -28,42 +32,43 @@ async function makeUser(data, password) {
 }
 
 async function seed() {
+  await Department.insertMany(university.departments);
   const cats = Object.fromEntries(
     (await Category.insertMany(CATEGORIES.map(([name, description]) => ({ name, description })))).map((c) => [c.name, c])
   );
 
   const admin = await makeUser(
-    { name: 'Campus Admin', email: process.env.SEED_ADMIN_EMAIL || 'admin@campus.edu', role: 'admin', department: 'Facilities Office' },
+    { name: 'Facilities Admin', email: process.env.SEED_ADMIN_EMAIL || `admin@${DOMAIN}`, role: 'admin', department: 'Facilities Office' },
     process.env.SEED_ADMIN_PASSWORD || DEMO_PASSWORDS.admin
   );
   const staff1 = await makeUser(
-    { name: 'Rahim Uddin', email: 'staff@campus.edu', role: 'staff', department: 'Electrical & Network', phone: '+8801700000001' },
+    { name: 'Rahim Uddin', email: `staff@${DOMAIN}`, role: 'staff', department: 'Electrical & IT Maintenance', phone: '+8801700000001' },
     DEMO_PASSWORDS.staff
   );
   const staff2 = await makeUser(
-    { name: 'Karim Hossain', email: 'staff2@campus.edu', role: 'staff', department: 'Maintenance', phone: '+8801700000002' },
+    { name: 'Karim Hossain', email: `staff2@${DOMAIN}`, role: 'staff', department: 'Civil & Plumbing Maintenance', phone: '+8801700000002' },
     DEMO_PASSWORDS.staff
   );
   const student = await makeUser(
-    { name: 'Anisha Rahman', email: 'student@campus.edu', studentId: 'CSE-2026-001', role: 'student', department: 'Computer Science' },
+    { name: 'Nusrat Jahan', email: `student@${DOMAIN}`, studentId: '22103001', role: 'student', department: 'CSE' },
     DEMO_PASSWORDS.student
   );
   const student2 = await makeUser(
-    { name: 'Tanvir Ahmed', email: 'student2@campus.edu', studentId: 'EEE-2026-014', role: 'student', department: 'Electrical Engineering' },
+    { name: 'Tanvir Ahmed', email: `student2@${DOMAIN}`, studentId: '22205014', role: 'student', department: 'EEE' },
     DEMO_PASSWORDS.student
   );
 
   // [student, category, title, description, building, room, priority, final status, staff, days ago]
   const samples = [
-    [student, 'Network', 'Lab Wi-Fi is not working', 'Several computers in the lab cannot connect to the internet since Monday morning.', 'Building A', '302', 'high', 'in_progress', staff1, 3],
-    [student, 'Electrical', 'Broken classroom fan', 'The ceiling fan near the window makes a loud noise and stops frequently.', 'Building B', '105', 'medium', 'assigned', staff1, 2],
-    [student, 'Cleaning', 'Washroom needs cleaning', 'The second floor washroom has not been cleaned for two days and has no soap.', 'Building C', '2F', 'low', 'closed', staff2, 12],
-    [student, 'Equipment', 'Projector not working', 'The projector in the seminar room shows no signal with any laptop.', 'Building A', '401', 'high', 'submitted', null, 0],
-    [student, 'Plumbing', 'Water leakage in corridor', 'Water is leaking from the ceiling near the stairs, the floor is slippery.', 'Library', 'Ground floor', 'critical', 'resolved', staff2, 6],
-    [student2, 'Furniture', 'Broken chairs in classroom', 'Five chairs in the back row are broken and unsafe to sit on.', 'Building D', '210', 'medium', 'under_review', null, 1],
-    [student2, 'Security', 'Lab door lock damaged', 'The electronics lab door does not lock properly after classes.', 'Building B', '220', 'high', 'needs_information', null, 4],
-    [student2, 'Network', 'Slow internet in hostel', 'Internet speed in the hostel common room is extremely slow every evening.', 'Hostel 1', 'Common room', 'medium', 'rejected', null, 9],
-    [student2, 'Electrical', 'Lights flickering in library', 'Tube lights on the reading floor flicker constantly, making it hard to study.', 'Library', '1st floor', 'medium', 'closed', staff1, 20],
+    [student, 'Network & IT', 'Lab Wi-Fi is not working', 'Several computers in the CSE software lab cannot connect to the internet since Monday morning.', 'Engineering Building', 'CSE Lab 3', 'high', 'in_progress', staff1, 3],
+    [student, 'Electrical', 'Broken classroom fan', 'The ceiling fan near the window makes a loud noise and stops frequently during class.', 'Main Academic Building', 'Room 405', 'medium', 'assigned', staff1, 2],
+    [student, 'Cleaning', 'Washroom needs cleaning', 'The third floor washroom has not been cleaned for two days and has no soap.', 'Engineering Building', '3rd floor washroom', 'low', 'closed', staff2, 12],
+    [student, 'Lab Equipment', 'Oscilloscope not powering on', 'Bench 4 oscilloscope in the electronics lab does not turn on, lab work is blocked.', 'Engineering Building', 'EEE Electronics Lab', 'high', 'submitted', null, 0],
+    [student, 'Plumbing', 'Water leakage in corridor', 'Water is leaking from the ceiling near the stairs, the floor is slippery.', 'Central Library', 'Ground floor', 'critical', 'resolved', staff2, 6],
+    [student2, 'Furniture', 'Broken chairs in classroom', 'Five chairs in the back row are broken and unsafe to sit on.', 'Main Academic Building', 'Room 210', 'medium', 'under_review', null, 1],
+    [student2, 'Safety & Security', 'Workshop door lock damaged', 'The mechanical workshop door does not lock properly after classes.', 'Engineering Workshop', 'ME Workshop', 'high', 'needs_information', null, 4],
+    [student2, 'AC & Ventilation', 'AC not cooling in seminar room', 'The air conditioner runs but blows warm air; the room gets very hot during seminars.', 'Main Academic Building', 'Seminar Hall', 'medium', 'rejected', null, 9],
+    [student2, 'Electrical', 'Lights flickering in library', 'Tube lights on the reading floor flicker constantly, making it hard to study.', 'Central Library', '1st floor', 'medium', 'closed', staff1, 20],
   ];
 
   const paths = {
@@ -79,7 +84,7 @@ async function seed() {
   const notes = {
     under_review: 'Reviewed by admin',
     needs_information: 'Please share a photo of the damaged lock and the exact time you noticed it.',
-    rejected: 'Hostel network is managed by an external ISP. Please contact the hostel office.',
+    rejected: 'This AC is under the vendor maintenance contract. The vendor has been informed directly.',
     in_progress: 'Started working on the issue',
     resolved: 'Issue fixed and verified on site.',
     closed: 'Student confirmed the resolution',
@@ -133,7 +138,7 @@ async function seed() {
   await Counter.findOneAndUpdate({ _id: `complaint-${year}` }, { seq }, { upsert: true });
 
   await Notification.insertMany([
-    { user: student._id, title: 'Welcome to Smart Campus', message: 'Report campus issues and track their progress here.' },
+    { user: student._id, title: `Welcome to ${university.shortName} Smart Campus`, message: 'Report campus issues and track their progress here.' },
     { user: staff1._id, title: 'You have new assignments', message: 'Check your dashboard for assigned complaints.' },
   ]);
 
@@ -144,15 +149,15 @@ async function seedIfEmpty() {
   if (await User.exists({})) return false;
   await seed();
   console.log('Demo data created:');
-  console.log(`  Admin   -> ${process.env.SEED_ADMIN_EMAIL || 'admin@campus.edu'} / ${process.env.SEED_ADMIN_PASSWORD ? '(from env)' : DEMO_PASSWORDS.admin}`);
-  console.log(`  Staff   -> staff@campus.edu / ${DEMO_PASSWORDS.staff}`);
-  console.log(`  Student -> student@campus.edu / ${DEMO_PASSWORDS.student}`);
+  console.log(`  Admin   -> ${process.env.SEED_ADMIN_EMAIL || `admin@${DOMAIN}`} / ${process.env.SEED_ADMIN_PASSWORD ? '(from env)' : DEMO_PASSWORDS.admin}`);
+  console.log(`  Staff   -> staff@${DOMAIN} / ${DEMO_PASSWORDS.staff}`);
+  console.log(`  Student -> student@${DOMAIN} / ${DEMO_PASSWORDS.student}`);
   return true;
 }
 
 async function reset() {
   await Promise.all(
-    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification].map((m) => m.deleteMany({}))
+    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department].map((m) => m.deleteMany({}))
   );
 }
 

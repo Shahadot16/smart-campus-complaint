@@ -34,11 +34,11 @@ async function loginAs(email, password) {
 }
 
 const accounts = {
-  admin: () => loginAs('admin@campus.edu', DEMO_PASSWORDS.admin),
-  staff: () => loginAs('staff@campus.edu', DEMO_PASSWORDS.staff),
-  staff2: () => loginAs('staff2@campus.edu', DEMO_PASSWORDS.staff),
-  student: () => loginAs('student@campus.edu', DEMO_PASSWORDS.student),
-  student2: () => loginAs('student2@campus.edu', DEMO_PASSWORDS.student),
+  admin: () => loginAs('admin@iubat.edu', DEMO_PASSWORDS.admin),
+  staff: () => loginAs('staff@iubat.edu', DEMO_PASSWORDS.staff),
+  staff2: () => loginAs('staff2@iubat.edu', DEMO_PASSWORDS.staff),
+  student: () => loginAs('student@iubat.edu', DEMO_PASSWORDS.student),
+  student2: () => loginAs('student2@iubat.edu', DEMO_PASSWORDS.student),
 };
 
 // Smallest valid PNG (1x1 pixel).

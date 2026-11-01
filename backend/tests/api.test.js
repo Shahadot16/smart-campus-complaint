@@ -10,7 +10,7 @@ let users;
 let category;
 beforeEach(async () => {
   users = await freshData();
-  category = await Category.findOne({ name: 'Network' });
+  category = await Category.findOne({ name: 'Network & IT' });
 });
 
 async function createComplaint(agent, overrides = {}) {
@@ -18,7 +18,7 @@ async function createComplaint(agent, overrides = {}) {
     title: 'Projector not working',
     description: 'The projector in room 301 shows no signal at all.',
     category: String(category._id),
-    building: 'Building A',
+    building: 'Engineering Building',
     room: '301',
     priority: 'high',
     ...overrides,
@@ -32,7 +32,7 @@ describe('Authentication', () => {
   it('T-01 registers a student and stores only a password hash', async () => {
     const res = await request(app).post('/api/auth/register').send({
       name: 'New Student',
-      email: 'new@campus.edu',
+      email: 'new@iubat.edu',
       password: 'Secret123',
       studentId: 'CSE-2026-777',
       department: 'CSE',
@@ -43,14 +43,14 @@ describe('Authentication', () => {
     assert.equal(res.body.data.user.passwordHash, undefined);
     assert.match(res.headers['set-cookie'][0], /HttpOnly/);
 
-    const stored = await User.findOne({ email: 'new@campus.edu' }).select('+passwordHash');
+    const stored = await User.findOne({ email: 'new@iubat.edu' }).select('+passwordHash');
     assert.notEqual(stored.passwordHash, 'Secret123');
     assert.match(stored.passwordHash, /^\$2[aby]\$/);
   });
 
   it('ignores a client-supplied role during registration', async () => {
     const res = await request(app).post('/api/auth/register').send({
-      name: 'Sneaky', email: 'sneaky@campus.edu', password: 'Secret123', studentId: 'X-001', role: 'admin',
+      name: 'Sneaky', email: 'sneaky@iubat.edu', password: 'Secret123', studentId: 'X-001', role: 'admin',
     });
     assert.equal(res.status, 201);
     assert.equal(res.body.data.user.role, 'student');
@@ -58,20 +58,20 @@ describe('Authentication', () => {
 
   it('T-02 rejects duplicate email and duplicate student ID with 409', async () => {
     const dupEmail = await request(app).post('/api/auth/register').send({
-      name: 'Dup', email: 'student@campus.edu', password: 'Secret123', studentId: 'NEW-1',
+      name: 'Dup', email: 'student@iubat.edu', password: 'Secret123', studentId: 'NEW-1',
     });
     assert.equal(dupEmail.status, 409);
     assert.equal(dupEmail.body.message, 'Email already exists');
 
     const dupId = await request(app).post('/api/auth/register').send({
-      name: 'Dup', email: 'other@campus.edu', password: 'Secret123', studentId: 'CSE-2026-001',
+      name: 'Dup', email: 'other@iubat.edu', password: 'Secret123', studentId: '22103001',
     });
     assert.equal(dupId.status, 409);
     assert.equal(dupId.body.message, 'Student ID already exists');
   });
 
   it('T-03 denies login with an incorrect password without leaking details', async () => {
-    const res = await request(app).post('/api/auth/login').send({ email: 'student@campus.edu', password: 'Wrong123' });
+    const res = await request(app).post('/api/auth/login').send({ email: 'student@iubat.edu', password: 'Wrong123' });
     assert.equal(res.status, 401);
     assert.deepEqual(res.body, { success: false, message: 'Invalid email or password' });
   });
@@ -82,8 +82,8 @@ describe('Authentication', () => {
   });
 
   it('blocks deactivated users', async () => {
-    await User.updateOne({ email: 'student@campus.edu' }, { isActive: false });
-    const res = await request(app).post('/api/auth/login').send({ email: 'student@campus.edu', password: 'Student@123' });
+    await User.updateOne({ email: 'student@iubat.edu' }, { isActive: false });
+    const res = await request(app).post('/api/auth/login').send({ email: 'student@iubat.edu', password: 'Student@123' });
     assert.equal(res.status, 403);
   });
 });
@@ -367,7 +367,7 @@ describe('Admin', () => {
     const admin = await accounts.admin();
     const res = await admin
       .post('/api/admin/users')
-      .send({ name: 'New Staff', email: 'newstaff@campus.edu', password: 'Staff1234', role: 'staff' });
+      .send({ name: 'New Staff', email: 'newstaff@iubat.edu', password: 'Staff1234', role: 'staff' });
     assert.equal(res.status, 201);
     assert.equal(res.body.data.role, 'staff');
     const self = await admin.patch(`/api/admin/users/${users.admin._id}`).send({ isActive: false });

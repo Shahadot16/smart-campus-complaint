@@ -7,4 +7,5 @@ module.exports = {
   ComplaintStatusHistory: require('./ComplaintStatusHistory'),
   Feedback: require('./Feedback'),
   Notification: require('./Notification'),
+  Department: require('./Department'),
 };

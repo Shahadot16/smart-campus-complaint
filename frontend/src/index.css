@@ -3,24 +3,26 @@
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  --color-navy-950: #0b2440;
-  --color-navy-900: #12395f;
-  --color-navy-800: #184a78;
-  --color-navy-700: #1f5b91;
-  --color-brand-50: #eef6fd;
-  --color-brand-100: #d6e9f8;
-  --color-brand-200: #aed3f1;
-  --color-brand-500: #2a78d6;
-  --color-brand-600: #1b6fa8;
-  --color-brand-700: #175d8d;
-  --color-surface: #f3f7fb;
-  --color-ink: #1e2b3c;
-  --color-ink-soft: #52627a;
-  --color-ink-muted: #7b8aa0;
-  --color-line: #dfe7f0;
+  --color-navy-950: #052e1c;
+  --color-navy-900: #0a4029;
+  --color-navy-800: #0f5535;
+  --color-navy-700: #146c43;
+  --color-brand-50: #ecfdf3;
+  --color-brand-100: #d1fadf;
+  --color-brand-200: #a6f4c5;
+  --color-brand-500: #16a34a;
+  --color-brand-600: #15803d;
+  --color-brand-700: #166534;
+  --color-surface: #f4f8f5;
+  --color-ink: #1b2a22;
+  --color-ink-soft: #4d6156;
+  --color-ink-muted: #7a8c82;
+  --color-line: #dce8e0;
+  --color-accent-red: #d62828;
+  --color-accent-gold: #f5c518;
 
-  --shadow-card: 0 1px 2px rgb(16 42 76 / 0.05), 0 1px 3px rgb(16 42 76 / 0.06);
-  --shadow-pop: 0 10px 30px -10px rgb(16 42 76 / 0.25);
+  --shadow-card: 0 1px 2px rgb(10 64 41 / 0.05), 0 1px 3px rgb(10 64 41 / 0.06);
+  --shadow-pop: 0 10px 30px -10px rgb(10 64 41 / 0.25);
 }
 
 @layer base {

@@ -92,6 +92,7 @@ export const staffApi = {
 }
 
 export const commonApi = {
+  meta: () => data(api.get('/meta')),
   categories: (params) => data(api.get('/categories', { params })),
   notifications: (params) => data(api.get('/notifications', { params })),
   markRead: (id) => data(api.patch(`/notifications/${id}/read`)),

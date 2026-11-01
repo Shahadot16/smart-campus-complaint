@@ -6,6 +6,7 @@ const complaints = require('../controllers/complaintController');
 const router = express.Router();
 
 // auth is applied per route so unknown /api paths still fall through to a 404.
+router.get('/meta', common.meta); // public: university profile for the login/register pages
 router.get('/categories', auth, common.listCategories);
 router.get('/attachments/:id/file', auth, complaints.downloadAttachment);
 

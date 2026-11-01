@@ -9,6 +9,7 @@ import {
   ListChecks,
   LogOut,
   Menu,
+  ShieldCheck,
   Tags,
   UserCircle,
   Users,
@@ -101,17 +102,20 @@ export default function AppLayout() {
   }
 
   const items = NAV[user.role] || []
-  const RoleIcon = user.role === 'staff' ? Wrench : GraduationCap
+  const RoleIcon = user.role === 'staff' ? Wrench : user.role === 'admin' ? ShieldCheck : GraduationCap
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-navy-900 px-3 py-5">
-      <Link to="/" className="mb-8 flex items-center gap-2.5 px-2">
-        <span className="grid size-9 place-items-center rounded-lg bg-white/10 text-white">
-          <RoleIcon className="size-5" aria-hidden="true" />
-        </span>
-        <span>
-          <span className="block text-sm font-semibold text-white">Smart Campus</span>
-          <span className="block text-[11px] text-brand-200">{ROLE_LABELS[user.role]} portal</span>
+    <div className="relative flex h-full flex-col bg-navy-900 px-3 py-5">
+      <div className="absolute top-0 left-0 flex h-1 w-full" aria-hidden="true">
+        <span className="flex-1 bg-emerald-500" />
+        <span className="flex-1 bg-accent-gold" />
+        <span className="flex-1 bg-accent-red" />
+      </div>
+      <Link to="/" className="mb-8 block px-2">
+        <img src="/brand/iubat-logo-name.png" alt="IUBAT" className="h-8 w-auto" />
+        <span className="mt-3 flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-brand-200 uppercase">
+          <RoleIcon className="size-3.5" aria-hidden="true" />
+          Smart Campus · {ROLE_LABELS[user.role]}
         </span>
       </Link>
       <nav className="flex-1 space-y-1" aria-label="Main">
@@ -154,7 +158,9 @@ export default function AppLayout() {
         <button onClick={() => setOpen(true)} className="btn-ghost p-2" aria-label="Open menu">
           <Menu className="size-5" />
         </button>
-        <span className="font-semibold text-navy-900">Smart Campus</span>
+        <span className="flex items-center gap-2 font-semibold text-navy-900">
+          <img src="/brand/iubat-logo.png" alt="" className="h-6 w-auto" /> IUBAT Smart Campus
+        </span>
         <Link to="/notifications" className="relative btn-ghost p-2" aria-label="Notifications">
           <Bell className="size-5" />
           {unread > 0 && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-amber-500" />}

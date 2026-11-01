@@ -1,7 +1,15 @@
-const { Category, Notification } = require('../models');
+const { Category, Notification, Department } = require('../models');
+const university = require('../config/university');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess, getPagination, buildMeta } = require('../utils/response');
 const { assertObjectId } = require('../utils/access');
+
+// GET /api/meta — public university profile and active departments
+exports.meta = async (_req, res) => {
+  const departments = await Department.find({ isActive: true }).sort({ code: 1 }).select('code name programs url').lean();
+  const { departments: _seed, ...profile } = university;
+  sendSuccess(res, { data: { university: profile, departments } });
+};
 
 // GET /api/categories — active categories for everyone; admins may pass ?all=true
 exports.listCategories = async (req, res) => {
