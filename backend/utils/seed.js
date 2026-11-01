@@ -4,7 +4,7 @@
  *   npm run seed -- --reset -> wipe all collections and reseed
  * Admin credentials can be overridden with SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
  */
-const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart, StockMovement, WorkOrder, Setting } = require('../models');
+const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart, StockMovement, WorkOrder, Setting, Vote } = require('../models');
 const { computeDueDates } = require('./sla');
 const university = require('../config/university');
 
@@ -256,6 +256,11 @@ async function seed() {
   }
   await Counter.findOneAndUpdate({ _id: `complaint-${year}` }, { seq }, { upsert: true });
 
+  // student2 is affected by student's Wi-Fi problem too.
+  const wifiVote = await Complaint.findOne({ asset: assets['AST-RTR-L3']._id });
+  await Vote.create({ complaint: wifiVote._id, user: student2._id });
+  await Complaint.updateOne({ _id: wifiVote._id }, { votes: 1 });
+
   // Repair records on the router complaint: parts used and a work order awaiting the CSE head.
   const wifi = await Complaint.findOne({ asset: assets['AST-RTR-L3']._id });
   for (const [sku, qty] of [['CAT6-M', 20], ['RJ45', 8]]) {
@@ -296,7 +301,7 @@ async function seedIfEmpty() {
 
 async function reset() {
   await Promise.all(
-    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart, StockMovement, WorkOrder, Setting].map((m) => m.deleteMany({}))
+    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart, StockMovement, WorkOrder, Setting, Vote].map((m) => m.deleteMany({}))
   );
 }
 

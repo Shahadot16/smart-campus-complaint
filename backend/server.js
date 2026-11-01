@@ -9,8 +9,8 @@ const { seedIfEmpty } = require('./utils/seed');
 async function start() {
   try {
     await connectDB();
-    // Fresh embedded databases get demo data so the app is usable immediately.
-    if (config.mongoUri === 'memory') await seedIfEmpty();
+    // Fresh embedded databases (or SEED_DEMO=true) get demo data so the app is usable immediately.
+    if (config.mongoUri === 'memory' || process.env.SEED_DEMO === 'true') await seedIfEmpty();
 
     // One HTTP server carries both the REST API and Socket.IO.
     const server = http.createServer(app);

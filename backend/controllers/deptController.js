@@ -4,7 +4,7 @@ const { listComplaints, statusCounts } = require('../utils/complaintQuery');
 
 // GET /api/dept/complaints — every complaint of my department
 exports.complaints = async (req, res) => {
-  const { items, meta } = await listComplaints(req.query, { department: req.user.department }, { studentFields: 'name studentId' });
+  const { items, meta } = await listComplaints(req.query, { department: req.user.department }, { studentFields: 'name studentId', hideAnonymous: true });
   sendSuccess(res, { data: items, meta });
 };
 

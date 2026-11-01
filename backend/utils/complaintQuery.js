@@ -42,7 +42,7 @@ const SORTS = {
 };
 
 /** Runs a paginated, populated complaint list query. */
-async function listComplaints(query, base, { studentFields = 'name' } = {}) {
+async function listComplaints(query, base, { studentFields = 'name', hideAnonymous = false } = {}) {
   const { page, limit, skip } = getPagination(query);
   const filter = buildFilter(query, base);
   const sortKey = SORTS[query.sort] ? query.sort : 'newest';
@@ -69,6 +69,9 @@ async function listComplaints(query, base, { studentFields = 'name' } = {}) {
     items = await populateList(Complaint.find(filter).sort(SORTS[sortKey]).skip(skip).limit(limit), studentFields);
   }
 
+  if (hideAnonymous) {
+    items = items.map((c) => (c.isAnonymous ? { ...c, student: { name: 'Anonymous student' } } : c));
+  }
   const total = await Complaint.countDocuments(filter);
   return { items, meta: buildMeta(page, limit, total) };
 }

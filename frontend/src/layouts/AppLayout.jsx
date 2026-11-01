@@ -8,6 +8,7 @@ import {
   UserCog,
   Bell,
   ClipboardList,
+  Megaphone,
   FilePlus2,
   FolderKanban,
   History,
@@ -34,6 +35,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import ChatbotWidget from '../components/ChatbotWidget'
 import { Avatar } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+import { LanguageSwitch, useLang } from '../context/LanguageContext'
 import { useSocket, useSocketEvent } from '../context/SocketContext'
 import { authApi, commonApi, errorMessage } from '../services/api'
 import { ROLE_LABELS } from '../utils/constants'
@@ -43,6 +45,7 @@ const NAV = {
     { to: '/student', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/student/new', label: 'New Complaint', icon: FilePlus2 },
     { to: '/student/complaints', label: 'My Complaints', icon: ClipboardList },
+    { to: '/board', label: 'Issue Board', icon: Megaphone },
   ],
   admin: [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -82,6 +85,7 @@ const COMMON = [
 ]
 
 function NavItem({ item, badge }) {
+  const { t } = useLang()
   const Icon = item.icon
   return (
     <NavLink
@@ -94,7 +98,7 @@ function NavItem({ item, badge }) {
       }
     >
       <Icon className="size-[18px]" aria-hidden="true" />
-      <span className="flex-1">{item.label}</span>
+      <span className="flex-1">{t(item.label)}</span>
       {badge > 0 && (
         <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] leading-none font-bold text-navy-950">
           {badge > 99 ? '99+' : badge}
@@ -163,6 +167,7 @@ export default function AppLayout() {
   }, [refreshUnread, location.pathname])
 
   const { connected } = useSocket()
+  const { t } = useLang()
 
   // Live notifications: show a toast and bump the badge without polling.
   useSocketEvent('notification:new', (n) => {
@@ -216,10 +221,11 @@ export default function AppLayout() {
           <NavItem key={item.to} item={item} badge={item.to === '/notifications' ? unread : 0} />
         ))}
       </nav>
-      <p className="mt-4 flex items-center gap-2 px-3 text-[11px] text-brand-200/80" title={connected ? 'Live updates on' : 'Reconnecting…'}>
+      <div className="mt-4 flex items-center gap-2 px-3 text-[11px] text-brand-200/80" title={connected ? 'Live updates on' : 'Reconnecting…'}>
         <span className={`size-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-slate-400'}`} aria-hidden="true" />
-        {connected ? 'Live updates on' : 'Connecting…'}
-      </p>
+        <span className="flex-1">{connected ? t('Live updates on') : t('Connecting…')}</span>
+        <LanguageSwitch className="text-brand-100 ring-white/20" />
+      </div>
       <div className="mt-2 flex items-center gap-3 rounded-lg bg-white/6 p-3">
         <Avatar name={user.name} className="size-9 text-sm" />
         <div className="min-w-0 flex-1">

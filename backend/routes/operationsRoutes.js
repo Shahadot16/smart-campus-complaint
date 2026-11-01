@@ -8,6 +8,7 @@ const inventory = require('../controllers/inventoryController');
 const workOrders = require('../controllers/workOrderController');
 const dept = require('../controllers/deptController');
 const aiCtrl = require('../controllers/aiController');
+const community = require('../controllers/communityController');
 const analytics = require('../controllers/analyticsController');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const config = require('../config/env');
@@ -49,6 +50,12 @@ router.get('/complaints/:id/similar', auth, aiCtrl.similarTo);
 router.get('/admin/ai/summary', auth, requirePermission('reports.view'), aiCtrl.weeklySummary);
 router.get('/admin/analytics', auth, requirePermission('reports.view'), analytics.analytics);
 router.get('/admin/reports/export.xlsx', auth, requirePermission('reports.view'), analytics.exportExcel);
+
+// Community: public issue board, "me too" votes and the monthly leaderboard.
+router.get('/public/complaints', auth, community.board);
+router.post('/complaints/:id/vote', auth, requirePermission('complaints.create'), community.vote);
+router.delete('/complaints/:id/vote', auth, requirePermission('complaints.create'), community.unvote);
+router.get('/leaderboard', auth, community.leaderboard);
 
 // The role -> permission matrix, shown on the admin "Roles & permissions" page.
 router.get('/permissions', auth, requirePermission('users.manage'), (_req, res) =>

@@ -20,4 +20,5 @@ module.exports = {
   StockMovement: require('./StockMovement'),
   WorkOrder: require('./WorkOrder'),
   Setting: require('./Setting'),
+  Vote: require('./Vote'),
 };

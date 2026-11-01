@@ -4,10 +4,12 @@ import toast from 'react-hot-toast'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Field, Spinner } from '../../components/ui'
 import { HOME_BY_ROLE, useAuth } from '../../context/AuthContext'
+import { useLang } from '../../context/LanguageContext'
 import { errorMessage, fieldErrors } from '../../services/api'
 import { LOGIN_ROLES } from '../../utils/roles'
 
 function RoleCard({ role, selected, onSelect }) {
+  const { t } = useLang()
   const Icon = role.icon
   return (
     <button
@@ -27,14 +29,15 @@ function RoleCard({ role, selected, onSelect }) {
       <span className={`grid size-12 place-items-center rounded-xl transition ${selected ? role.iconBox : role.idle}`}>
         <Icon className="size-6" aria-hidden="true" />
       </span>
-      <span className="text-sm leading-tight font-semibold text-ink">{role.title}</span>
-      <span className="hidden text-[11px] leading-snug text-ink-muted sm:block">{role.subtitle}</span>
+      <span className="text-sm leading-tight font-semibold text-ink">{t(role.title)}</span>
+      <span className="hidden text-[11px] leading-snug text-ink-muted sm:block">{t(role.subtitle)}</span>
     </button>
   )
 }
 
 export default function Login() {
   const { login, completeTwoFactor, logout } = useAuth()
+  const { t } = useLang()
   const navigate = useNavigate()
   const location = useLocation()
   const [roleKey, setRoleKey] = useState('student')
@@ -134,8 +137,8 @@ export default function Login() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-3xl font-bold tracking-tight text-navy-900">Welcome back</h1>
-      <p className="mt-1.5 text-sm text-ink-soft">Choose your role, then sign in with your IUBAT account.</p>
+      <h1 className="text-3xl font-bold tracking-tight text-navy-900">{t('Welcome back')}</h1>
+      <p className="mt-1.5 text-sm text-ink-soft">{t('Choose your role, then sign in with your IUBAT account.')}</p>
 
       <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Sign in as">
         {LOGIN_ROLES.map((r) => (
@@ -156,10 +159,10 @@ export default function Login() {
           <span className={`grid size-7 place-items-center rounded-lg ${role.iconBox}`}>
             <role.icon className="size-4" aria-hidden="true" />
           </span>
-          <p className="text-sm font-semibold text-ink">{role.title} sign in</p>
+          <p className="text-sm font-semibold text-ink">{t('{role} sign in', { role: t(role.title) })}</p>
         </div>
 
-        <Field label="Email" htmlFor="email" error={errors.email}>
+        <Field label={t('Email')} htmlFor="email" error={errors.email}>
           <input
             id="email"
             type="email"
@@ -173,9 +176,9 @@ export default function Login() {
         <Field
           label={
             <span className="flex items-center justify-between">
-              Password
+              {t('Password')}
               <Link to="/forgot-password" className="text-xs font-medium text-brand-600 hover:underline">
-                Forgot password?
+                {t('Forgot password?')}
               </Link>
             </span>
           }
@@ -204,7 +207,7 @@ export default function Login() {
 
         <button type="submit" className={`btn w-full py-2.5 text-white ${role.button}`} disabled={submitting}>
           {submitting ? <Spinner className="size-4 text-white" /> : null}
-          Sign in as {role.title}
+          {t('Sign in as {role}', { role: t(role.title) })}
           {!submitting && <ArrowRight className="size-4" />}
         </button>
 
@@ -216,19 +219,19 @@ export default function Login() {
             setErrors({})
           }}
         >
-          <Sparkles className="size-3.5" aria-hidden="true" /> Fill demo {role.title.toLowerCase()} account
+          <Sparkles className="size-3.5" aria-hidden="true" /> {t('Fill demo account')} ({t(role.title)})
         </button>
       </form>
 
       {role.canRegister ? (
         <p className="mt-6 text-center text-sm text-ink-soft">
-          New to IUBAT Smart Campus?{' '}
+          {t('New to IUBAT Smart Campus?')}{' '}
           <Link to="/register" className="font-semibold text-brand-600 hover:underline">
-            Create a student account
+            {t('Create a student account')}
           </Link>
         </p>
       ) : (
-        <p className="mt-6 text-center text-xs text-ink-muted">Staff and admin accounts are created by the Facilities Office.</p>
+        <p className="mt-6 text-center text-xs text-ink-muted">{t('Staff and admin accounts are created by the Facilities Office.')}</p>
       )}
     </div>
   )

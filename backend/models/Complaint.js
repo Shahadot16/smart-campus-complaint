@@ -18,6 +18,12 @@ const complaintSchema = new mongoose.Schema(
     // Engineering department responsible (from the location, else the student's department).
     department: { type: String, trim: true, uppercase: true, maxlength: 10, default: '' },
     asset: { type: mongoose.Schema.Types.ObjectId, ref: 'Asset', default: null },
+    // Public complaints appear (without the reporter's name) on the campus issue board.
+    visibility: { type: String, enum: ['public', 'private'], default: 'public' },
+    // Anonymous: the reporter's identity is hidden from staff and department heads (admins still see it).
+    isAnonymous: { type: Boolean, default: false },
+    votes: { type: Number, default: 0, min: 0 },
+    votesEscalated: { type: Boolean, default: false },
     // Running repair cost of spare parts used (BDT).
     cost: {
       parts: { type: Number, default: 0, min: 0 },
@@ -56,5 +62,6 @@ complaintSchema.index({ status: 1, 'sla.resolveDueAt': 1 });
 complaintSchema.index({ 'location.place': 1 });
 complaintSchema.index({ department: 1, status: 1 });
 complaintSchema.index({ asset: 1, createdAt: -1 });
+complaintSchema.index({ visibility: 1, status: 1, votes: -1 });
 
 module.exports = mongoose.model('Complaint', complaintSchema);

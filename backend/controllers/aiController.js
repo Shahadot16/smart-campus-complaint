@@ -1,4 +1,4 @@
-const { Category, Complaint, Feedback } = require('../models');
+const { Category, Complaint, Feedback, Vote } = require('../models');
 const ai = require('../utils/ai');
 const { sendSuccess } = require('../utils/response');
 const { canAccessComplaint, loadAccessibleComplaint } = require('../utils/access');
@@ -28,6 +28,7 @@ async function findSimilar(draft, excludeId = null) {
     .select('trackingCode title description status priority location category createdAt votes student')
     .populate('category', 'name')
     .lean();
+  const voted = draft.userId ? new Set((await Vote.find({ user: draft.userId }).select('complaint').lean()).map((v) => String(v.complaint))) : new Set();
   return candidates
     .map((c) => ({ c, score: ai.similarity(draft, c) }))
     .filter((x) => x.score >= 0.3)
@@ -45,6 +46,7 @@ async function findSimilar(draft, excludeId = null) {
       votes: c.votes || 0,
       score,
       mine: String(c.student) === String(draft.userId),
+      voted: voted.has(String(c._id)),
     }));
 }
 

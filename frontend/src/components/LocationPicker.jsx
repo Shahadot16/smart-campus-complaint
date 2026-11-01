@@ -1,6 +1,7 @@
 import { Building2, DoorOpen } from 'lucide-react'
 import useApi from '../hooks/useApi'
 import { locationApi } from '../services/api'
+import { useLang } from '../context/LanguageContext'
 import { Field } from './ui'
 
 const OTHER = '__other__'
@@ -11,6 +12,7 @@ const OTHER = '__other__'
  * value: { place, buildingId, building, room }  (place = chosen room or building id)
  */
 export default function LocationPicker({ value, onChange, errors = {} }) {
+  const { t } = useLang()
   const { data } = useApi(() => locationApi.tree(), [])
   const buildings = data?.tree || []
   const building = buildings.find((b) => b._id === value.buildingId)
@@ -32,7 +34,7 @@ export default function LocationPicker({ value, onChange, errors = {} }) {
 
   return (
     <div className="grid gap-5 sm:grid-cols-2">
-      <Field label="Building" htmlFor="loc-building" error={errors.building || errors.place} required>
+      <Field label={t('Building')} htmlFor="loc-building" error={errors.building || errors.place} required>
         <div className="relative">
           <Building2 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
           <select id="loc-building" className="input pl-9" value={value.buildingId || ''} onChange={(e) => pickBuilding(e.target.value)}>
@@ -57,7 +59,7 @@ export default function LocationPicker({ value, onChange, errors = {} }) {
         )}
       </Field>
 
-      <Field label="Room / area" htmlFor="loc-room" error={errors.room}>
+      <Field label={t('Room / area')} htmlFor="loc-room" error={errors.room}>
         {typingBuilding || (building && !floors.length) ? (
           <input
             id="loc-room"

@@ -23,7 +23,10 @@ const note = (field = 'note', max = 2000) =>
 
 const asset = () => body('asset').optional({ values: 'falsy' }).isMongoId().withMessage('Invalid asset');
 
-exports.create = [title(), description(), category(), building(), room(), place(), asset(), priority()];
+const visibility = () => body('visibility').optional().isIn(['public', 'private']).withMessage('Visibility must be public or private');
+const anonymous = () => body('isAnonymous').optional().isBoolean().withMessage('isAnonymous must be true or false').toBoolean();
+
+exports.create = [title(), description(), category(), building(), room(), place(), asset(), priority(), visibility(), anonymous()];
 
 exports.aiDraft = [
   body('title').optional().isString().isLength({ max: 200 }),

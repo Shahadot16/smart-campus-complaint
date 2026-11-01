@@ -6,7 +6,7 @@ const { loadAccessibleComplaint, isAssignedStaff } = require('../utils/access');
 
 // GET /api/staff/complaints — only complaints assigned to me
 exports.listAssigned = async (req, res) => {
-  const { items, meta } = await listComplaints(req.query, { assignedStaff: req.user._id }, { studentFields: 'name department' });
+  const { items, meta } = await listComplaints(req.query, { assignedStaff: req.user._id }, { studentFields: 'name department', hideAnonymous: true });
   sendSuccess(res, { data: items, meta });
 };
 

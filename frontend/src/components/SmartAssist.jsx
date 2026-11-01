@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import useDebounce from '../hooks/useDebounce'
 import { aiApi } from '../services/api'
 import { PRIORITIES } from '../utils/constants'
+import MeTooButton from './MeTooButton'
 import { StatusBadge } from './ui'
 
 /**
@@ -64,15 +65,17 @@ export default function SmartAssist({ form, building, categories, onApply }) {
                 <span className="text-xs text-ink-muted">
                   {d.location?.building} · {Math.round(d.score * 100)}% match
                 </span>
-                {d.mine && (
+                {d.mine ? (
                   <Link to={`/complaints/${d._id}`} className="text-xs font-medium text-brand-700 underline">
                     yours — open
                   </Link>
+                ) : (
+                  <MeTooButton complaint={d} />
                 )}
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-amber-800">If it's the same problem, you don't need to submit it again.</p>
+          <p className="mt-2 text-xs text-amber-800">If it's the same problem, press “Me too” instead of submitting it again — it raises the priority for everyone.</p>
         </div>
       )}
     </div>

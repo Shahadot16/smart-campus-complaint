@@ -1,5 +1,6 @@
 import { BellRing, Cpu, MapPin, ShieldCheck, Timer } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
+import { LanguageSwitch, useLang } from '../context/LanguageContext'
 import useApi from '../hooks/useApi'
 import { commonApi } from '../services/api'
 
@@ -10,6 +11,7 @@ const FEATURES = [
 ]
 
 export default function AuthLayout() {
+  const { t } = useLang()
   const { data: meta } = useApi(() => commonApi.meta(), [])
   const departments = meta?.departments || []
 
@@ -31,9 +33,9 @@ export default function AuthLayout() {
           <div className="max-w-lg">
             <p className="text-sm font-semibold tracking-[0.2em] text-brand-200 uppercase">Smart Campus</p>
             <h2 className="mt-3 text-4xl leading-tight font-bold xl:text-5xl">
-              A better campus,
+              {t('A better campus,')}
               <br />
-              <span className="text-accent-gold">one fix at a time.</span>
+              <span className="text-accent-gold">{t('one fix at a time.')}</span>
             </h2>
             <p className="mt-4 text-brand-100/80">
               The complaint &amp; maintenance portal for the engineering faculty of {meta?.university.name || 'IUBAT'}.
@@ -45,14 +47,14 @@ export default function AuthLayout() {
                   <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white/10 ring-1 ring-white/15">
                     <Icon className="size-[18px] text-brand-200" aria-hidden="true" />
                   </span>
-                  {text}
+                  {t(text)}
                 </li>
               ))}
             </ul>
 
             {departments.length > 0 && (
               <div className="mt-10">
-                <p className="text-xs font-semibold tracking-wide text-brand-200/80 uppercase">Engineering departments</p>
+                <p className="text-xs font-semibold tracking-wide text-brand-200/80 uppercase">{t('Engineering departments')}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {departments.map((d) => (
                     <span key={d.code} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs ring-1 ring-white/15" title={d.name}>
@@ -72,7 +74,8 @@ export default function AuthLayout() {
         </div>
       </aside>
 
-      <main className="flex items-center justify-center bg-surface px-4 py-10 sm:px-8">
+      <main className="relative flex items-center justify-center bg-surface px-4 py-10 sm:px-8">
+        <LanguageSwitch className="absolute top-4 right-4 text-ink-soft ring-line" />
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <img src="/brand/iubat-logo.png" alt="" className="h-10 w-auto" />

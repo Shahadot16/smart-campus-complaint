@@ -1,0 +1,38 @@
+# One command: docker compose up --build   ->  http://localhost:5000
+services:
+  mongo:
+    image: mongo:8
+    # A single-node replica set, so MongoDB transactions work.
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }).ok }"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/smart_campus_complaint_db?replicaSet=rs0
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+      CLIENT_ORIGIN: http://localhost:5000
+      APP_URL: http://localhost:5000
+      COOKIE_SAMESITE: lax
+      SEED_DEMO: "true"
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    volumes:
+      - uploads:/app/backend/uploads
+
+volumes:
+  mongo-data:
+  uploads:

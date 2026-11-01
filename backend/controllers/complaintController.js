@@ -88,6 +88,8 @@ exports.create = async (req, res) => {
           location,
           department,
           asset: asset?._id || null,
+          visibility: req.body.isAnonymous ? 'private' : req.body.visibility || 'public',
+          isAnonymous: Boolean(req.body.isAnonymous),
           priority,
           status: 'submitted',
           sla: due,
@@ -173,6 +175,7 @@ exports.getById = async (req, res) => {
   const isStudent = req.user.role === 'student';
 
   const studentFields = req.user.role === 'admin' ? 'name email studentId department phone' : 'name department';
+  const hideReporter = complaint.isAnonymous && !['admin', 'student'].includes(req.user.role);
   await complaint.populate([
     { path: 'category', select: 'name isActive' },
     { path: 'asset', select: 'code name type status warrantyUntil' },
@@ -191,9 +194,9 @@ exports.getById = async (req, res) => {
 
   sendSuccess(res, {
     data: {
-      complaint: complaint.toObject({ versionKey: false }),
-      history,
-      attachments: attachments.map(({ storageKey, ...a }) => a),
+      complaint: hideReporter ? { ...complaint.toObject({ versionKey: false }), student: { name: 'Anonymous student' } } : complaint.toObject({ versionKey: false }),
+      history: hideReporter ? history.map((h) => (h.changedBy?.role === 'student' ? { ...h, changedBy: { ...h.changedBy, name: 'Anonymous student' } } : h)) : history,
+      attachments: attachments.map(({ storageKey, ...a }) => (hideReporter && a.uploadedBy?.role === 'student' ? { ...a, uploadedBy: { ...a.uploadedBy, name: 'Anonymous student' } } : a)),
       feedback,
       permissions: permissionsFor(req.user, complaint, Boolean(feedback)),
     },

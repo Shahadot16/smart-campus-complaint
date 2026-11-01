@@ -1,8 +1,9 @@
 import { CheckCircle2, QrCode, Send } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import ImagePicker from '../../components/ImagePicker'
+import { useLang } from '../../context/LanguageContext'
 import LocationPicker from '../../components/LocationPicker'
 import SmartAssist from '../../components/SmartAssist'
 import { ErrorState, Field, PageHeader, PageLoader, Spinner } from '../../components/ui'
@@ -10,7 +11,8 @@ import useApi from '../../hooks/useApi'
 import { commonApi, complaintApi, errorMessage, fieldErrors, locationApi, opsApi } from '../../services/api'
 import { PRIORITY_OPTIONS } from '../../utils/constants'
 
-const EMPTY = { title: '', description: '', category: '', priority: 'medium' }
+const EMPTY = { title: '', description: '', category: '', priority: 'medium', visibility: 'public', isAnonymous: false }
+const DRAFT_KEY = 'complaint-draft'
 const NO_PLACE = { place: '', buildingId: '', building: '', room: '' }
 
 function validate(f) {
@@ -25,7 +27,22 @@ export default function NewComplaint() {
   const navigate = useNavigate()
   const { data: categories, loading, error, reload } = useApi(() => commonApi.categories(), [])
   const [params] = useSearchParams()
-  const [form, setForm] = useState(EMPTY)
+  const { t } = useLang()
+  // Unsent text survives a closed tab or a lost connection.
+  const [form, setForm] = useState(() => {
+    try {
+      return { ...EMPTY, ...JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}') }
+    } catch {
+      return EMPTY
+    }
+  })
+  const restored = useRef(Boolean(localStorage.getItem(DRAFT_KEY)))
+  useEffect(() => {
+    if (form.title || form.description) localStorage.setItem(DRAFT_KEY, JSON.stringify(form))
+  }, [form])
+  useEffect(() => {
+    if (restored.current) toast(t('Draft restored'), { icon: '📝' })
+  }, [t])
   const [loc, setLoc] = useState(NO_PLACE)
   const [scanned, setScanned] = useState(null)
   const [asset, setAsset] = useState(null)
@@ -78,7 +95,7 @@ export default function NewComplaint() {
     if (Object.keys(errs).length) return
 
     const fd = new FormData()
-    for (const [k, v] of Object.entries(form)) fd.append(k, v.trim())
+    for (const [k, v] of Object.entries(form)) fd.append(k, typeof v === 'string' ? v.trim() : String(v))
     if (loc.place) fd.append('place', loc.place)
     if (asset) fd.append('asset', asset._id)
     fd.append('building', loc.building.trim())
@@ -89,6 +106,7 @@ export default function NewComplaint() {
     try {
       const res = await complaintApi.create(fd)
       setCreated(res.data)
+      localStorage.removeItem(DRAFT_KEY)
       toast.success('Complaint submitted')
     } catch (err) {
       setErrors(fieldErrors(err))
@@ -118,6 +136,7 @@ export default function NewComplaint() {
             onClick={() => {
               setCreated(null)
               setForm(EMPTY)
+              localStorage.removeItem(DRAFT_KEY)
               setLoc(NO_PLACE)
               setScanned(null)
               setAsset(null)
@@ -138,14 +157,14 @@ export default function NewComplaint() {
 
   return (
     <div className="animate-fade-in mx-auto max-w-3xl">
-      <PageHeader title="New complaint" subtitle="Describe the issue clearly so the right team can fix it quickly." />
+      <PageHeader title={t('New complaint')} subtitle={t('Describe the issue clearly so the right team can fix it quickly.')} />
       <form onSubmit={onSubmit} className="card space-y-5 p-5 sm:p-6" noValidate>
-        <Field label="Title" htmlFor="title" error={errors.title} hint={`${form.title.length}/120`} required>
+        <Field label={t('Title')} htmlFor="title" error={errors.title} hint={`${form.title.length}/120`} required>
           <input id="title" className={cls('title')} value={form.title} onChange={set('title')} maxLength={120} placeholder="e.g. Ceiling fan not working in Room 204" />
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Category" htmlFor="category" error={errors.category} required>
+          <Field label={t('Category')} htmlFor="category" error={errors.category} required>
             <select id="category" className={cls('category')} value={form.category} onChange={set('category')}>
               <option value="">Select a category</option>
               {categories.map((c) => (
@@ -155,7 +174,7 @@ export default function NewComplaint() {
               ))}
             </select>
           </Field>
-          <Field label="Priority" htmlFor="priority" error={errors.priority} hint="How urgently does this need attention?">
+          <Field label={t('Priority')} htmlFor="priority" error={errors.priority} hint="How urgently does this need attention?">
             <select id="priority" className={cls('priority')} value={form.priority} onChange={set('priority')}>
               {PRIORITY_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -187,7 +206,7 @@ export default function NewComplaint() {
         )}
         <LocationPicker value={loc} onChange={(v) => (setLoc(v), setScanned(null))} errors={errors} />
 
-        <Field label="Description" htmlFor="description" error={errors.description} hint={`${form.description.length}/2000`} required>
+        <Field label={t('Description')} htmlFor="description" error={errors.description} hint={`${form.description.length}/2000`} required>
           <textarea
             id="description"
             rows={5}
@@ -201,17 +220,39 @@ export default function NewComplaint() {
 
         <SmartAssist form={form} building={loc.building} categories={categories} onApply={(v) => setForm((f) => ({ ...f, ...v }))} />
 
-        <Field label="Photos (optional)">
+        <fieldset className="rounded-xl border border-line p-4">
+          <legend className="px-1 text-sm font-medium text-ink">{t('Who can see this?')}</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              ['public', t('Public — others can say "me too"')],
+              ['private', t('Private — only staff handling it')],
+            ].map(([v, label]) => (
+              <label key={v} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${form.visibility === v && !form.isAnonymous ? 'border-brand-500 bg-brand-50' : 'border-line'} ${form.isAnonymous ? 'opacity-50' : ''}`}>
+                <input type="radio" name="visibility" value={v} disabled={form.isAnonymous} checked={form.isAnonymous ? v === 'private' : form.visibility === v} onChange={() => setForm((f) => ({ ...f, visibility: v }))} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <label className="mt-3 flex items-start gap-2 text-sm">
+            <input type="checkbox" className="mt-0.5" checked={form.isAnonymous} onChange={(e) => setForm((f) => ({ ...f, isAnonymous: e.target.checked }))} />
+            <span>
+              <span className="font-medium text-ink">{t('Report anonymously')}</span>
+              <span className="block text-xs text-ink-muted">{t('Your name is hidden from staff (only the administrator can see it). Use this for sensitive issues.')}</span>
+            </span>
+          </label>
+        </fieldset>
+
+        <Field label={t('Photos (optional)')}>
           <ImagePicker files={files} onChange={setFiles} disabled={submitting} />
         </Field>
 
         <div className="flex justify-end gap-3 border-t border-line pt-5">
-          <Link to="/student" className="btn-secondary">
-            Cancel
+          <Link to="/student" className="btn-secondary" onClick={() => localStorage.removeItem(DRAFT_KEY)}>
+            {t('Cancel')}
           </Link>
           <button type="submit" className="btn-primary" disabled={submitting}>
             {submitting ? <Spinner className="size-4 text-white" /> : <Send className="size-4" />}
-            Submit complaint
+            {t('Submit complaint')}
           </button>
         </div>
       </form>
