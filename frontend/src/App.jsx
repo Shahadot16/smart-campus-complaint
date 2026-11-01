@@ -4,13 +4,17 @@ import { PageLoader } from './components/ui'
 import { HOME_BY_ROLE, useAuth } from './context/AuthContext'
 import AppLayout from './layouts/AppLayout'
 import AuthLayout from './layouts/AuthLayout'
+import AuditLog from './pages/admin/AuditLog'
 import AdminCategories from './pages/admin/Categories'
 import AdminComplaints from './pages/admin/Complaints'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminReports from './pages/admin/Reports'
 import AdminUsers from './pages/admin/Users'
+import ForgotPassword from './pages/auth/ForgotPassword'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import ResetPassword from './pages/auth/ResetPassword'
+import VerifyEmail from './pages/auth/VerifyEmail'
 import ComplaintDetail from './pages/shared/ComplaintDetail'
 import NotFound from './pages/shared/NotFound'
 import Notifications from './pages/shared/Notifications'
@@ -36,7 +40,14 @@ export default function App() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
+      </Route>
+
+      {/* Works whether or not the user is signed in */}
+      <Route element={<AuthLayout />}>
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>
@@ -53,6 +64,7 @@ export default function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/reports" element={<AdminReports />} />
+            <Route path="/admin/audit-log" element={<AuditLog />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={['staff']} />}>

@@ -5,6 +5,8 @@ const validate = require('../middleware/validate');
 const { uploadImages } = require('../middleware/upload');
 const v = require('../validators/complaintValidators');
 const ctrl = require('../controllers/complaintController');
+const chat = require('../controllers/chatController');
+const { body } = require('express-validator');
 
 const router = express.Router();
 const student = authorizeRole('student');
@@ -21,6 +23,12 @@ router.get('/:id', ctrl.getById);
 router.patch('/:id', student, validate(v.update), ctrl.update);
 router.post('/:id/attachments', uploadImages, ctrl.uploadAttachments);
 router.post('/:id/notes', validate(v.addNote), ctrl.addNote);
+router.get('/:id/messages', chat.list);
+router.post(
+  '/:id/messages',
+  validate([body('text').isString().trim().isLength({ min: 1, max: 2000 }).withMessage('Message must be 1–2000 characters')]),
+  chat.send
+);
 router.post('/:id/close', student, ctrl.close);
 router.post('/:id/reopen-request', student, validate(v.reopenRequest), ctrl.requestReopen);
 router.post('/:id/feedback', student, validate(v.feedback), ctrl.submitFeedback);

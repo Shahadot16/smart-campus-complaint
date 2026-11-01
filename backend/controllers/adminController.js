@@ -1,4 +1,6 @@
-const { Complaint, Category, User, Feedback } = require('../models');
+const { Complaint, Category, User, Feedback, AuditLog } = require('../models');
+const audit = require('../utils/audit');
+const realtime = require('../utils/realtime');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess, getPagination, buildMeta, escapeRegex } = require('../utils/response');
 const { changeStatus, assignStaff, commitChange } = require('../utils/complaintService');
@@ -25,6 +27,13 @@ exports.changeStatus = async (req, res) => {
     note: req.body.note || '',
     internal: req.body.internal,
   });
+  await audit(req, {
+    action: 'complaint.status',
+    entity: 'Complaint',
+    entityId: complaint._id,
+    summary: `${complaint.trackingCode}: ${complaint.status} -> ${updated.status}`,
+    details: { from: complaint.status, to: updated.status, note: req.body.note || '' },
+  });
   sendSuccess(res, { message: 'Status updated', data: { id: updated._id, status: updated.status } });
 };
 
@@ -37,6 +46,13 @@ exports.assign = async (req, res) => {
     staffId: req.body.staffId,
     priority: req.body.priority,
     note: req.body.note || '',
+  });
+  await audit(req, {
+    action: 'complaint.assign',
+    entity: 'Complaint',
+    entityId: complaint._id,
+    summary: `${complaint.trackingCode} assigned`,
+    details: { staffId: req.body.staffId, priority: updated.priority },
   });
   sendSuccess(res, {
     message: 'Staff assigned successfully',
@@ -60,6 +76,12 @@ exports.setPriority = async (req, res) => {
       note: `Priority changed from ${complaint.priority} to ${priority}${note.trim() ? ` — ${note.trim()}` : ''}`,
     },
   ]);
+  await audit(req, {
+    action: 'complaint.priority',
+    entity: 'Complaint',
+    entityId: complaint._id,
+    summary: `${complaint.trackingCode}: priority ${complaint.priority} -> ${priority}`,
+  });
   sendSuccess(res, { message: 'Priority updated', data: { id: updated._id, priority: updated.priority } });
 };
 
@@ -102,6 +124,7 @@ exports.createUser = async (req, res) => {
   const user = new User({ name, email, role, department, phone });
   await user.setPassword(password);
   await user.save();
+  await audit(req, { action: 'user.create', entity: 'User', entityId: user._id, summary: `Created ${role} account ${email}` });
   sendSuccess(res, { status: 201, message: `${role === 'admin' ? 'Admin' : 'Staff'} account created`, data: profile(user) });
 };
 
@@ -128,10 +151,16 @@ exports.updateUser = async (req, res) => {
     if (open) throw ApiError.conflict(`Reassign this staff member's ${open} open complaint(s) before deactivating`);
   }
 
+  const changes = {};
   for (const field of ['name', 'department', 'phone', 'isActive', 'role']) {
-    if (req.body[field] !== undefined) user[field] = req.body[field];
+    if (req.body[field] !== undefined && req.body[field] !== user[field]) {
+      changes[field] = { from: user[field], to: req.body[field] };
+      user[field] = req.body[field];
+    }
   }
   await user.save();
+  const action = changes.isActive ? (user.isActive ? 'user.activate' : 'user.deactivate') : 'user.update';
+  await audit(req, { action, entity: 'User', entityId: user._id, summary: `${action.split('.')[1]} ${user.email}`, details: changes });
   sendSuccess(res, { message: 'User updated', data: profile(user) });
 };
 
@@ -144,6 +173,7 @@ exports.createCategory = async (req, res) => {
     throw ApiError.conflict('A category with this name already exists');
   }
   const category = await Category.create({ name, description: req.body.description || '' });
+  await audit(req, { action: 'category.create', entity: 'Category', entityId: category._id, summary: `Created category ${name}` });
   sendSuccess(res, { status: 201, message: 'Category created', data: category });
 };
 
@@ -164,6 +194,7 @@ exports.updateCategory = async (req, res) => {
     if (req.body[field] !== undefined) category[field] = req.body[field];
   }
   await category.save();
+  await audit(req, { action: 'category.update', entity: 'Category', entityId: category._id, summary: `Updated category ${category.name}`, details: req.body });
   sendSuccess(res, { message: 'Category updated', data: category });
 };
 
@@ -245,4 +276,24 @@ exports.reports = async (req, res) => {
       },
     },
   });
+};
+
+/* ------------------------------ Audit log ----------------------------- */
+
+// GET /api/admin/audit-logs?entity=&action=&page=
+exports.auditLogs = async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query, 25);
+  const filter = {};
+  if (req.query.entity) filter.entity = String(req.query.entity);
+  if (req.query.action) filter.action = new RegExp(`^${escapeRegex(String(req.query.action))}`);
+  const [items, total] = await Promise.all([
+    AuditLog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate('actor', 'name email role').lean(),
+    AuditLog.countDocuments(filter),
+  ]);
+  sendSuccess(res, { data: items, meta: buildMeta(page, limit, total) });
+};
+
+// GET /api/admin/online — ids of users with an open live connection
+exports.online = async (_req, res) => {
+  sendSuccess(res, { data: realtime.onlineUserIds() });
 };

@@ -23,8 +23,16 @@ export function AuthProvider({ children }) {
     return () => setUnauthorizedHandler(null)
   }, [])
 
+  // Returns the user, or { twoFactorRequired, challengeToken } when a code is needed.
   const login = useCallback(async (credentials) => {
     const res = await authApi.login(credentials)
+    if (res.data.twoFactorRequired) return res.data
+    setUser(res.data.user)
+    return res.data.user
+  }, [])
+
+  const completeTwoFactor = useCallback(async (challengeToken, code) => {
+    const res = await authApi.loginTwoFactor({ challengeToken, code })
     setUser(res.data.user)
     return res.data.user
   }, [])
@@ -44,8 +52,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, setUser, loading, login, register, logout }),
-    [user, loading, login, register, logout]
+    () => ({ user, setUser, loading, login, completeTwoFactor, register, logout }),
+    [user, loading, login, completeTwoFactor, register, logout]
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

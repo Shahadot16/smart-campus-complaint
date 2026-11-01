@@ -14,12 +14,33 @@ export function setUnauthorizedHandler(fn) {
   onUnauthorized = fn
 }
 
+// Requests where a 401 means "wrong credentials", not "access token expired".
+const NO_REFRESH = ['/auth/login', '/auth/2fa/login', '/auth/register', '/auth/refresh', '/auth/logout', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email']
+
+// One refresh at a time; parallel requests wait for the same promise.
+let refreshing = null
+export function refreshSession() {
+  refreshing ??= api.post('/auth/refresh').finally(() => {
+    refreshing = null
+  })
+  return refreshing
+}
+
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
+  async (error) => {
     const status = error.response?.status
-    const url = error.config?.url || ''
-    if (status === 401 && onUnauthorized && !url.startsWith('/auth/')) onUnauthorized()
+    const config = error.config || {}
+    const url = config.url || ''
+    if (status === 401 && !config._retried && !NO_REFRESH.some((p) => url.startsWith(p))) {
+      config._retried = true
+      try {
+        await refreshSession()
+        return api(config) // retry once with the new access token
+      } catch {
+        onUnauthorized?.()
+      }
+    }
     return Promise.reject(error)
   }
 )
@@ -55,6 +76,17 @@ export const authApi = {
   logout: () => data(api.post('/auth/logout')),
   updateProfile: (body) => data(api.patch('/auth/me', body)),
   changePassword: (body) => data(api.patch('/auth/password', body)),
+  loginTwoFactor: (body) => data(api.post('/auth/2fa/login', body)),
+  verifyEmail: (token) => data(api.post('/auth/verify-email', { token })),
+  resendVerification: () => data(api.post('/auth/resend-verification')),
+  forgotPassword: (email) => data(api.post('/auth/forgot-password', { email })),
+  resetPassword: (body) => data(api.post('/auth/reset-password', body)),
+  setupTwoFactor: () => data(api.post('/auth/2fa/setup')),
+  enableTwoFactor: (code) => data(api.post('/auth/2fa/enable', { code })),
+  disableTwoFactor: (body) => data(api.post('/auth/2fa/disable', body)),
+  sessions: () => data(api.get('/auth/sessions')),
+  revokeSession: (id) => data(api.delete(`/auth/sessions/${id}`)),
+  revokeOtherSessions: () => data(api.post('/auth/sessions/revoke-others')),
 }
 
 export const complaintApi = {
@@ -69,6 +101,8 @@ export const complaintApi = {
   close: (id, body = {}) => data(api.post(`/complaints/${id}/close`, body)),
   requestReopen: (id, body) => data(api.post(`/complaints/${id}/reopen-request`, body)),
   feedback: (id, body) => data(api.post(`/complaints/${id}/feedback`, body)),
+  messages: (id) => data(api.get(`/complaints/${id}/messages`)),
+  sendMessage: (id, text) => data(api.post(`/complaints/${id}/messages`, { text })),
 }
 
 export const adminApi = {
@@ -83,6 +117,8 @@ export const adminApi = {
   createCategory: (body) => data(api.post('/admin/categories', body)),
   updateCategory: (id, body) => data(api.patch(`/admin/categories/${id}`, body)),
   reports: (params) => data(api.get('/admin/reports', { params })),
+  auditLogs: (params) => data(api.get('/admin/audit-logs', { params })),
+  online: () => data(api.get('/admin/online')),
 }
 
 export const staffApi = {

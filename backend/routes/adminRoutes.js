@@ -24,5 +24,7 @@ router.post('/categories', validate(av.createCategory), ctrl.createCategory);
 router.patch('/categories/:id', validate(av.updateCategory), ctrl.updateCategory);
 
 router.get('/reports', validate(av.reports), ctrl.reports);
+router.get('/audit-logs', ctrl.auditLogs);
+router.get('/online', ctrl.online);
 
 module.exports = router;

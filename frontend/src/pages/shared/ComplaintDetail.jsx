@@ -14,13 +14,15 @@ import {
   UserCog,
   Wrench,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import ChatPanel from '../../components/ChatPanel'
 import ImagePicker from '../../components/ImagePicker'
 import StarRating from '../../components/StarRating'
 import { Avatar, ErrorState, Field, Modal, PageLoader, PriorityBadge, Spinner, StatusBadge } from '../../components/ui'
 import { HOME_BY_ROLE, useAuth } from '../../context/AuthContext'
+import { useSocket, useSocketEvent } from '../../context/SocketContext'
 import useApi from '../../hooks/useApi'
 import { adminApi, commonApi, complaintApi, errorMessage, fileUrl, staffApi } from '../../services/api'
 import { PRIORITY_OPTIONS, ROLE_LABELS, STATUS_ACTIONS, STATUSES } from '../../utils/constants'
@@ -122,6 +124,8 @@ function StatusModal({ target, complaint, role, onClose, onDone }) {
 
 function AssignModal({ complaint, onClose, onDone }) {
   const { data: staff, loading } = useApi(() => adminApi.staff(), [])
+  const { data: online } = useApi(() => adminApi.online(), [])
+  const isOnline = (id) => online?.includes(String(id))
   const [form, setForm] = useState({ staffId: complaint.assignedStaff?._id || '', priority: complaint.priority, note: '' })
   const { busy, run } = useAction(onDone)
 
@@ -162,7 +166,13 @@ function AssignModal({ complaint, onClose, onDone }) {
                     }`}
                   >
                     <input type="radio" name="staff" value={s.id} checked={form.staffId === s.id} onChange={() => setForm({ ...form, staffId: s.id })} />
-                    <Avatar name={s.name} className="size-8 text-xs" />
+                    <span className="relative">
+                      <Avatar name={s.name} className="size-8 text-xs" />
+                      <span
+                        className={`absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-2 ring-white ${isOnline(s.id) ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                        title={isOnline(s.id) ? 'Online now' : 'Offline'}
+                      />
+                    </span>
                     <span className="flex-1">
                       <span className="block text-sm font-medium text-ink">{s.name}</span>
                       <span className="block text-xs text-ink-muted">{s.department || s.email}</span>
@@ -501,6 +511,18 @@ export default function ComplaintDetail() {
   const { data, loading, error, reload } = useApi(() => complaintApi.get(id), [id])
   const [modal, setModal] = useState(null) // { type, target }
   const priorityAction = useAction(reload)
+  const { socket, connected } = useSocket()
+
+  // Join this complaint's live room; leave it when navigating away.
+  useEffect(() => {
+    if (!socket || !connected) return
+    socket.emit('complaint:join', id)
+    return () => socket.emit('complaint:leave', id)
+  }, [socket, connected, id])
+
+  useSocketEvent('complaint:updated', (e) => {
+    if (e.id === id) reload()
+  })
 
   if (loading && !data) return <PageLoader />
   if (error)
@@ -668,6 +690,7 @@ export default function ComplaintDetail() {
             )}
           </div>
 
+          {c.status !== 'rejected' && (role !== 'student' || c.assignedStaff) && <ChatPanel complaintId={c._id} />}
           {p.canFeedback && <FeedbackCard complaint={c} onDone={reload} />}
           {feedback && (
             <div className="card p-5">

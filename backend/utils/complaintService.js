@@ -2,6 +2,7 @@ const { Complaint, ComplaintStatusHistory, Counter, User } = require('../models'
 const { withTransaction } = require('../config/db');
 const ApiError = require('./ApiError');
 const notify = require('./notify');
+const realtime = require('./realtime');
 const { canTransition, NOTE_REQUIRED, STATUS_LABELS, isReopen } = require('./workflow');
 
 /** Generates a unique, human-friendly tracking code such as CMP-2026-0001. */
@@ -42,6 +43,10 @@ async function commitChange(complaint, expectedStatus, set, historyEntries) {
       }
       throw err;
     }
+    return updated;
+  }).then((updated) => {
+    // Everyone viewing the complaint refreshes it.
+    realtime.toComplaint(updated._id, 'complaint:updated', { id: String(updated._id), status: updated.status });
     return updated;
   });
 }
@@ -189,6 +194,7 @@ async function addNote({ complaint, actor, note, internal = false }) {
     note: note.trim(),
     internal: Boolean(internal),
   });
+  realtime.toComplaint(complaint._id, 'complaint:updated', { id: String(complaint._id), status: complaint.status });
   if (!internal && actor.role !== 'student') {
     await notify([complaint.student], {
       title: `Update on ${complaint.trackingCode}`,

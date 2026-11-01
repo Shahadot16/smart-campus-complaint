@@ -10,6 +10,7 @@ export default defineConfig({
     // Same-origin API in development, so the HttpOnly auth cookie just works.
     proxy: {
       '/api': { target: 'http://localhost:5000', changeOrigin: true },
+      '/socket.io': { target: 'http://localhost:5000', changeOrigin: true, ws: true },
     },
   },
 })

@@ -3,6 +3,7 @@ const { withTransaction } = require('../config/db');
 const { Complaint, Category, ComplaintStatusHistory, Attachment, Feedback, User } = require('../models');
 const ApiError = require('../utils/ApiError');
 const notify = require('../utils/notify');
+const realtime = require('../utils/realtime');
 const { sendSuccess } = require('../utils/response');
 const { verifyImages, saveImages, filePath } = require('../utils/fileStorage');
 const { generateTrackingCode, changeStatus, addNote } = require('../utils/complaintService');
@@ -80,6 +81,7 @@ exports.create = async (req, res) => {
 
   const attachments = await saveImages(req.files, { complaintId: complaint._id, userId: req.user._id });
 
+  realtime.toRole('admin', 'complaint:new', { id: String(complaint._id), trackingCode: complaint.trackingCode });
   await notifyAdmins({
     title: `New complaint ${complaint.trackingCode}`,
     message: `${complaint.title} — ${complaint.priority} priority`,
@@ -206,6 +208,7 @@ exports.uploadAttachments = async (req, res) => {
 
   const purpose = req.user.role === 'student' ? 'evidence' : 'resolution';
   const saved = await saveImages(req.files, { complaintId: complaint._id, userId: req.user._id, purpose });
+  realtime.toComplaint(complaint._id, 'complaint:updated', { id: String(complaint._id), status: complaint.status });
   sendSuccess(res, {
     status: 201,
     message: `${saved.length} image(s) uploaded`,
@@ -283,6 +286,7 @@ exports.requestReopen = async (req, res) => {
     message: req.body.reason.slice(0, 200),
     complaint,
   });
+  realtime.toComplaint(complaint._id, 'complaint:updated', { id: String(complaint._id), status: complaint.status });
   sendSuccess(res, { message: 'Reopen request sent to the administrator' });
 };
 
@@ -310,5 +314,6 @@ exports.submitFeedback = async (req, res) => {
       complaint,
     });
   }
+  realtime.toComplaint(complaint._id, 'complaint:updated', { id: String(complaint._id), status: complaint.status });
   sendSuccess(res, { status: 201, message: 'Thank you for your feedback!', data: feedback });
 };

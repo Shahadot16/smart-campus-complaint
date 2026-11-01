@@ -1,6 +1,7 @@
 import { KeyRound, Save } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import SecuritySettings from '../../components/SecuritySettings'
 import { Avatar, Field, PageHeader, Spinner } from '../../components/ui'
 import { useAuth } from '../../context/AuthContext'
 import { authApi, errorMessage, fieldErrors } from '../../services/api'
@@ -115,7 +116,12 @@ export default function Profile() {
       <div className="card flex items-center gap-4 p-5">
         <Avatar name={user.name} className="size-14 text-lg" />
         <div>
-          <p className="text-lg font-semibold text-navy-900">{user.name}</p>
+          <p className="flex items-center gap-2 text-lg font-semibold text-navy-900">
+            {user.name}
+            <span className={`chip ${user.emailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
+              {user.emailVerified ? 'Email verified' : 'Email not verified'}
+            </span>
+          </p>
           <p className="text-sm text-ink-soft">
             {ROLE_LABELS[user.role]}
             {user.studentId ? ` · ${user.studentId}` : ''} · member since {formatDate(user.createdAt)}
@@ -124,6 +130,7 @@ export default function Profile() {
       </div>
       <ProfileForm />
       <PasswordForm />
+      <SecuritySettings />
     </div>
   )
 }

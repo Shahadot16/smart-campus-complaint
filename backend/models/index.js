@@ -8,4 +8,8 @@ module.exports = {
   Feedback: require('./Feedback'),
   Notification: require('./Notification'),
   Department: require('./Department'),
+  Session: require('./Session'),
+  AuthToken: require('./AuthToken'),
+  AuditLog: require('./AuditLog'),
+  Message: require('./Message'),
 };

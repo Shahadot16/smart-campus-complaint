@@ -4,6 +4,8 @@ import {
   ClipboardList,
   FilePlus2,
   FolderKanban,
+  History,
+  MailWarning,
   GraduationCap,
   LayoutDashboard,
   ListChecks,
@@ -21,7 +23,8 @@ import toast from 'react-hot-toast'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Avatar } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
-import { commonApi } from '../services/api'
+import { useSocket, useSocketEvent } from '../context/SocketContext'
+import { authApi, commonApi, errorMessage } from '../services/api'
 import { ROLE_LABELS } from '../utils/constants'
 
 const NAV = {
@@ -36,6 +39,7 @@ const NAV = {
     { to: '/admin/users', label: 'Users', icon: Users },
     { to: '/admin/categories', label: 'Categories', icon: Tags },
     { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
+    { to: '/admin/audit-log', label: 'Audit Log', icon: History },
   ],
   staff: [
     { to: '/staff', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -71,6 +75,40 @@ function NavItem({ item, badge }) {
   )
 }
 
+function VerifyEmailBanner({ email }) {
+  const [sending, setSending] = useState(false)
+  const [devLink, setDevLink] = useState(null)
+  async function resend() {
+    setSending(true)
+    try {
+      const res = await authApi.resendVerification()
+      toast.success(res.message)
+      // Development only: the server returns the link because no real email is sent.
+      if (res.data?.devLink) setDevLink(res.data.devLink)
+    } catch (err) {
+      toast.error(errorMessage(err))
+    } finally {
+      setSending(false)
+    }
+  }
+  return (
+    <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center">
+      <MailWarning className="size-5 shrink-0 text-amber-600" aria-hidden="true" />
+      <p className="flex-1">
+        Please verify your email <strong>{email}</strong>. Check your inbox for the verification link.
+        {devLink && (
+          <a href={devLink} className="ml-1 font-semibold text-brand-700 underline">
+            (Development: open the link)
+          </a>
+        )}
+      </p>
+      <button className="btn-secondary btn-sm" onClick={resend} disabled={sending}>
+        Resend link
+      </button>
+    </div>
+  )
+}
+
 export default function AppLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -94,6 +132,28 @@ export default function AppLayout() {
     const t = setInterval(refreshUnread, 30000)
     return () => clearInterval(t)
   }, [refreshUnread, location.pathname])
+
+  const { connected } = useSocket()
+
+  // Live notifications: show a toast and bump the badge without polling.
+  useSocketEvent('notification:new', (n) => {
+    setUnread((u) => u + 1)
+    toast(
+      (t) => (
+        <button
+          className="text-left"
+          onClick={() => {
+            toast.dismiss(t.id)
+            if (n.complaint) navigate(`/complaints/${n.complaint}`)
+          }}
+        >
+          <span className="block text-sm font-semibold text-navy-900">{n.title}</span>
+          <span className="block text-xs text-ink-soft">{n.message}</span>
+        </button>
+      ),
+      { icon: '🔔', duration: 5000 }
+    )
+  })
 
   async function handleLogout() {
     await logout()
@@ -127,7 +187,11 @@ export default function AppLayout() {
           <NavItem key={item.to} item={item} badge={item.to === '/notifications' ? unread : 0} />
         ))}
       </nav>
-      <div className="mt-4 flex items-center gap-3 rounded-lg bg-white/6 p-3">
+      <p className="mt-4 flex items-center gap-2 px-3 text-[11px] text-brand-200/80" title={connected ? 'Live updates on' : 'Reconnecting…'}>
+        <span className={`size-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-slate-400'}`} aria-hidden="true" />
+        {connected ? 'Live updates on' : 'Connecting…'}
+      </p>
+      <div className="mt-2 flex items-center gap-3 rounded-lg bg-white/6 p-3">
         <Avatar name={user.name} className="size-9 text-sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{user.name}</p>
@@ -168,6 +232,7 @@ export default function AppLayout() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {!user.emailVerified && <VerifyEmailBanner email={user.email} />}
         <Outlet context={{ refreshUnread }} />
       </main>
     </div>

@@ -13,6 +13,16 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: Object.values(ROLES), default: ROLES.STUDENT },
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
+    emailVerified: { type: Boolean, default: false },
+    // TOTP two-factor authentication; secrets are never returned by default.
+    twoFactor: {
+      enabled: { type: Boolean, default: false },
+      secret: { type: String, select: false },
+      pendingSecret: { type: String, select: false },
+    },
+    // Brute-force protection: the account is locked after repeated failures.
+    failedLogins: { type: Number, default: 0 },
+    lockUntil: Date,
   },
   { timestamps: true }
 );

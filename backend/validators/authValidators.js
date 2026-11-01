@@ -57,4 +57,14 @@ exports.changePassword = [
   strongPassword('newPassword'),
 ];
 
+const code = () => body('code').trim().matches(/^\d{6}$/).withMessage('Enter the 6-digit code');
+const token = () => body('token').isString().isLength({ min: 20, max: 200 }).withMessage('Invalid or missing link token');
+
+exports.verifyEmail = [token()];
+exports.forgotPassword = [email()];
+exports.resetPassword = [token(), strongPassword()];
+exports.twoFactorLogin = [body('challengeToken').isString().notEmpty().withMessage('Sign-in attempt missing'), code()];
+exports.twoFactorEnable = [code()];
+exports.twoFactorDisable = [body('password').isString().notEmpty().withMessage('Password is required'), code()];
+
 exports.rules = { name, email, strongPassword, department, phone };

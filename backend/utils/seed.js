@@ -4,7 +4,7 @@
  *   npm run seed -- --reset -> wipe all collections and reseed
  * Admin credentials can be overridden with SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
  */
-const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department } = require('../models');
+const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message } = require('../models');
 const university = require('../config/university');
 
 const DEMO_PASSWORDS = { admin: 'Admin@123', staff: 'Staff@123', student: 'Student@123' };
@@ -26,7 +26,7 @@ const day = 24 * 60 * 60 * 1000;
 const ago = (days, hours = 0) => new Date(Date.now() - days * day - hours * 36e5);
 
 async function makeUser(data, password) {
-  const user = new User(data);
+  const user = new User({ emailVerified: true, ...data });
   await user.setPassword(password);
   return user.save();
 }
@@ -157,7 +157,7 @@ async function seedIfEmpty() {
 
 async function reset() {
   await Promise.all(
-    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department].map((m) => m.deleteMany({}))
+    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message].map((m) => m.deleteMany({}))
   );
 }
 

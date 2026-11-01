@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Eye, EyeOff, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -34,7 +34,7 @@ function RoleCard({ role, selected, onSelect }) {
 }
 
 export default function Login() {
-  const { login, logout } = useAuth()
+  const { login, completeTwoFactor, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [roleKey, setRoleKey] = useState('student')
@@ -42,6 +42,8 @@ export default function Login() {
   const [errors, setErrors] = useState({})
   const [showPw, setShowPw] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [challenge, setChallenge] = useState(null) // set when a 2FA code is needed
+  const [code, setCode] = useState('')
 
   const role = LOGIN_ROLES.find((r) => r.key === roleKey)
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -56,24 +58,78 @@ export default function Login() {
 
     setSubmitting(true)
     try {
-      const user = await login({ email: form.email.trim(), password: form.password })
-      // The account's real role decides access; a mismatched choice is undone so users pick the right portal.
-      if (user.role !== roleKey) {
-        await logout()
-        const actual = LOGIN_ROLES.find((r) => r.key === user.role)
-        toast.error(`This is a ${actual?.title || user.role} account. Please choose "${actual?.title || user.role}" above.`)
-        if (actual) setRoleKey(actual.key)
+      const result = await login({ email: form.email.trim(), password: form.password })
+      if (result.twoFactorRequired) {
+        setChallenge(result.challengeToken)
+        setCode('')
         return
       }
-      toast.success(`Welcome back, ${user.name.split(' ')[0]}!`)
-      const from = location.state?.from
-      navigate(from && from !== '/login' ? from : HOME_BY_ROLE[user.role], { replace: true })
+      await finish(result)
     } catch (err) {
       setErrors(fieldErrors(err))
       toast.error(errorMessage(err, 'Login failed'))
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function finish(user) {
+    // The account's real role decides access; a mismatched choice is undone so users pick the right portal.
+    if (user.role !== roleKey) {
+      await logout()
+      const actual = LOGIN_ROLES.find((r) => r.key === user.role)
+      toast.error(`This is a ${actual?.title || user.role} account. Please choose "${actual?.title || user.role}" above.`)
+      if (actual) setRoleKey(actual.key)
+      setChallenge(null)
+      return
+    }
+    toast.success(`Welcome back, ${user.name.split(' ')[0]}!`)
+    const from = location.state?.from
+    navigate(from && from !== '/login' ? from : HOME_BY_ROLE[user.role], { replace: true })
+  }
+
+  async function onSubmitCode(e) {
+    e.preventDefault()
+    if (!/^\d{6}$/.test(code)) return toast.error('Enter the 6-digit code')
+    setSubmitting(true)
+    try {
+      await finish(await completeTwoFactor(challenge, code))
+    } catch (err) {
+      toast.error(errorMessage(err, 'Verification failed'))
+      if (err?.response?.data?.message?.includes('expired')) setChallenge(null)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (challenge) {
+    return (
+      <div className="animate-fade-in">
+        <button className="btn-ghost btn-sm -ml-2 mb-4" onClick={() => setChallenge(null)}>
+          <ArrowLeft className="size-4" /> Back
+        </button>
+        <span className="grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+          <KeyRound className="size-7" aria-hidden="true" />
+        </span>
+        <h1 className="mt-4 text-2xl font-bold text-navy-900">Two-step verification</h1>
+        <p className="mt-1.5 text-sm text-ink-soft">Open your authenticator app and enter the 6-digit code for IUBAT Smart Campus.</p>
+        <form onSubmit={onSubmitCode} className="card mt-6 space-y-4 p-5" noValidate>
+          <input
+            className="input text-center font-mono text-2xl tracking-[0.5em]"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            aria-label="Verification code"
+            autoFocus
+          />
+          <button type="submit" className={`btn w-full py-2.5 text-white ${role.button}`} disabled={submitting || code.length !== 6}>
+            {submitting && <Spinner className="size-4 text-white" />} Verify and sign in
+          </button>
+        </form>
+      </div>
+    )
   }
 
   return (
@@ -114,7 +170,18 @@ export default function Login() {
             placeholder="you@iubat.edu"
           />
         </Field>
-        <Field label="Password" htmlFor="password" error={errors.password}>
+        <Field
+          label={
+            <span className="flex items-center justify-between">
+              Password
+              <Link to="/forgot-password" className="text-xs font-medium text-brand-600 hover:underline">
+                Forgot password?
+              </Link>
+            </span>
+          }
+          htmlFor="password"
+          error={errors.password}
+        >
           <div className="relative">
             <input
               id="password"
