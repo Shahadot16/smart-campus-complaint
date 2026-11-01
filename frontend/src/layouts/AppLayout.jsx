@@ -14,6 +14,7 @@ import {
   MailWarning,
   GraduationCap,
   LayoutDashboard,
+  LineChart,
   ListChecks,
   LogOut,
   Map,
@@ -30,6 +31,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import ChatbotWidget from '../components/ChatbotWidget'
 import { Avatar } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { useSocket, useSocketEvent } from '../context/SocketContext'
@@ -51,6 +53,7 @@ const NAV = {
     { to: '/assets', label: 'Assets', icon: Boxes },
     { to: '/admin/inventory', label: 'Inventory', icon: Package },
     { to: '/admin/categories', label: 'Categories', icon: Tags },
+    { to: '/admin/analytics', label: 'Analytics', icon: LineChart },
     { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
     { to: '/admin/sla', label: 'SLA & Jobs', icon: Timer },
     { to: '/admin/locations', label: 'Locations & QR', icon: MapPin },
@@ -261,6 +264,7 @@ export default function AppLayout() {
         {!user.emailVerified && <VerifyEmailBanner email={user.email} />}
         <Outlet context={{ refreshUnread }} />
       </main>
+      <ChatbotWidget />
     </div>
   )
 }

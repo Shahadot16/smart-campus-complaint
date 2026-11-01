@@ -136,6 +136,9 @@ export const adminApi = {
   addStock: (id, body) => data(api.post(`/admin/parts/${id}/stock`, body)),
   partMovements: (id) => data(api.get(`/admin/parts/${id}/movements`)),
   setWorkOrderLimits: (body) => data(api.put('/admin/work-orders/limits', body)),
+  analytics: (params) => data(api.get('/admin/analytics', { params })),
+  aiSummary: () => data(api.get('/admin/ai/summary')),
+  exportExcel: (params) => api.get('/admin/reports/export.xlsx', { params, responseType: 'blob' }).then((r) => r.data),
   updateLocation: (id, body) => data(api.patch(`/admin/locations/${id}`, body)),
 }
 
@@ -160,6 +163,13 @@ export const opsApi = {
   limits: () => data(api.get('/work-orders/limits')),
   deptComplaints: (params) => data(api.get('/dept/complaints', { params })),
   deptStats: () => data(api.get('/dept/stats')),
+}
+
+export const aiApi = {
+  status: () => data(api.get('/ai/status')),
+  classify: (body) => data(api.post('/ai/classify', body)),
+  similar: (body) => data(api.post('/ai/similar', body)),
+  chat: (message) => data(api.post('/ai/chat', { message })),
 }
 
 export const locationApi = {

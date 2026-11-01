@@ -25,6 +25,16 @@ const asset = () => body('asset').optional({ values: 'falsy' }).isMongoId().with
 
 exports.create = [title(), description(), category(), building(), room(), place(), asset(), priority()];
 
+exports.aiDraft = [
+  body('title').optional().isString().isLength({ max: 200 }),
+  body('description').optional().isString().isLength({ max: 4000 }),
+  body('category').optional({ values: 'falsy' }).isMongoId(),
+  body('building').optional().isString().isLength({ max: 80 }),
+  body('room').optional().isString().isLength({ max: 40 }),
+];
+
+exports.aiChat = [body('message').isString().trim().isLength({ min: 1, max: 1000 }).withMessage('Please type a message (max 1000 characters)')];
+
 exports.useParts = [
   body('part').isMongoId().withMessage('Please choose a part'),
   body('quantity').isInt({ min: 1, max: 1000 }).withMessage('Quantity must be 1–1000').toInt(),

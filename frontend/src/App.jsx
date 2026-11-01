@@ -19,6 +19,7 @@ import Approvals from './pages/shared/Approvals'
 import AssetDetail from './pages/shared/AssetDetail'
 import Assets from './pages/shared/Assets'
 import AdminReports from './pages/admin/Reports'
+import Analytics from './pages/admin/Analytics'
 import SlaSettings from './pages/admin/SlaSettings'
 import AdminUsers from './pages/admin/Users'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/reports" element={<AdminReports />} />
+            <Route path="/admin/analytics" element={<Analytics />} />
             <Route path="/admin/audit-log" element={<AuditLog />} />
             <Route path="/admin/sla" element={<SlaSettings />} />
             <Route path="/admin/locations" element={<Locations />} />

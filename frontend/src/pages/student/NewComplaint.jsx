@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import ImagePicker from '../../components/ImagePicker'
 import LocationPicker from '../../components/LocationPicker'
+import SmartAssist from '../../components/SmartAssist'
 import { ErrorState, Field, PageHeader, PageLoader, Spinner } from '../../components/ui'
 import useApi from '../../hooks/useApi'
 import { commonApi, complaintApi, errorMessage, fieldErrors, locationApi, opsApi } from '../../services/api'
@@ -197,6 +198,8 @@ export default function NewComplaint() {
             placeholder="What is the problem, since when, and how is it affecting you?"
           />
         </Field>
+
+        <SmartAssist form={form} building={loc.building} categories={categories} onApply={(v) => setForm((f) => ({ ...f, ...v }))} />
 
         <Field label="Photos (optional)">
           <ImagePicker files={files} onChange={setFiles} disabled={submitting} />
