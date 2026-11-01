@@ -3,6 +3,7 @@ const { withTransaction } = require('../config/db');
 const ApiError = require('./ApiError');
 const notify = require('./notify');
 const realtime = require('./realtime');
+const { slaUpdateFor } = require('./sla');
 const { canTransition, NOTE_REQUIRED, STATUS_LABELS, isReopen } = require('./workflow');
 
 /** Generates a unique, human-friendly tracking code such as CMP-2026-0001. */
@@ -79,9 +80,12 @@ async function changeStatus({ complaint, actor, newStatus, note = '', internal =
 
   const set = { status: newStatus };
   const now = new Date();
+  // The first action after submission counts as the SLA "response".
+  if (!complaint.sla?.firstResponseAt) set['sla.firstResponseAt'] = now;
   if (newStatus === 'resolved') {
     set.resolutionNote = note.trim();
     set.resolvedAt = now;
+    if (complaint.sla?.resolveDueAt && now > complaint.sla.resolveDueAt) set['sla.resolveBreached'] = true;
   }
   if (newStatus === 'closed') set.closedAt = now;
   if (newStatus === 'rejected') set.rejectionReason = note.trim();
@@ -98,6 +102,7 @@ async function changeStatus({ complaint, actor, newStatus, note = '', internal =
   // Tell the other people involved (never the actor).
   const recipients = [updated.student, updated.assignedStaff].filter((id) => String(id) !== String(actor._id));
   await notify(recipients, {
+    email: 'statusUpdates',
     title: `${updated.trackingCode} is now ${STATUS_LABELS[newStatus]}`,
     message: internal ? `Status changed to ${STATUS_LABELS[newStatus]}.` : note.trim() || `Status changed to ${STATUS_LABELS[newStatus]}.`,
     complaint: updated,
@@ -126,6 +131,7 @@ async function assignStaff({ complaint, actor, staffId, priority, note = '' }) {
 
   const history = [];
   const set = { assignedStaff: staff._id };
+  if (!complaint.sla?.firstResponseAt) set['sla.firstResponseAt'] = new Date();
   let newStatus = oldStatus;
 
   if (oldStatus === 'submitted') {
@@ -154,6 +160,7 @@ async function assignStaff({ complaint, actor, staffId, priority, note = '' }) {
 
   if (priority && priority !== complaint.priority) {
     set.priority = priority;
+    Object.assign(set, await slaUpdateFor(complaint, { priority }));
     history.push({
       changedBy: actor._id,
       type: 'priority',
@@ -168,12 +175,14 @@ async function assignStaff({ complaint, actor, staffId, priority, note = '' }) {
   const updated = await commitChange(complaint, oldStatus, set, history);
 
   await notify([staff._id], {
+    email: 'assignments',
     title: `New assignment: ${updated.trackingCode}`,
     message: `${updated.title} (${updated.priority} priority)`,
     complaint: updated,
   });
   if (newStatus !== oldStatus) {
     await notify([updated.student], {
+      email: 'statusUpdates',
       title: `${updated.trackingCode} has been assigned`,
       message: 'A maintenance staff member is now responsible for your complaint.',
       complaint: updated,

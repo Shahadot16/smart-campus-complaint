@@ -46,3 +46,14 @@ export function formatHours(h) {
   if (h < 48) return `${h} h`
   return `${Math.round((h / 24) * 10) / 10} days`
 }
+
+/** "3h 20m" style duration from milliseconds. */
+export function formatDuration(ms) {
+  const mins = Math.max(0, Math.round(Math.abs(ms) / 60000))
+  const d = Math.floor(mins / 1440)
+  const h = Math.floor((mins % 1440) / 60)
+  const m = mins % 60
+  if (d) return `${d}d ${h}h`
+  if (h) return `${h}h ${m}m`
+  return `${m}m`
+}

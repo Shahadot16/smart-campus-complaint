@@ -35,6 +35,39 @@ exports.updateCategory = [
   body('isActive').optional().isBoolean().withMessage('isActive must be true or false').toBoolean(),
 ];
 
+const { PRIORITIES } = require('../utils/constants');
+
+exports.slaPolicy = [
+  body('priority').isIn(PRIORITIES).withMessage('Invalid priority'),
+  body('category').optional({ values: 'falsy' }).isMongoId().withMessage('Invalid category'),
+  body('responseHours').isFloat({ min: 0.25, max: 720 }).withMessage('Response time must be 0.25–720 hours').toFloat(),
+  body('resolveHours').isFloat({ min: 0.5, max: 2160 }).withMessage('Resolution time must be 0.5–2160 hours').toFloat(),
+];
+
+const locationCode = () =>
+  body('code').trim().matches(/^[A-Za-z0-9-]{2,24}$/).withMessage('Code may contain letters, numbers and dashes (2–24 characters)');
+const coords = [
+  body('lat').optional({ values: 'null' }).isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude').toFloat(),
+  body('lng').optional({ values: 'null' }).isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude').toFloat(),
+];
+
+exports.createLocation = [
+  body('name').trim().isLength({ min: 1, max: 80 }).withMessage('Name is required (max 80 characters)'),
+  body('type').isIn(['building', 'floor', 'room']).withMessage('Type must be building, floor or room'),
+  body('parent').optional({ values: 'falsy' }).isMongoId().withMessage('Invalid parent'),
+  locationCode(),
+  body('department').optional().trim().isLength({ max: 10 }),
+  ...coords,
+];
+
+exports.updateLocation = [
+  body('name').optional().trim().isLength({ min: 1, max: 80 }).withMessage('Name is required (max 80 characters)'),
+  locationCode().optional(),
+  body('department').optional().trim().isLength({ max: 10 }),
+  body('isActive').optional().isBoolean().toBoolean(),
+  ...coords,
+];
+
 exports.reports = [
   query('from').optional().isISO8601().withMessage('Invalid start date'),
   query('to').optional().isISO8601().withMessage('Invalid end date'),

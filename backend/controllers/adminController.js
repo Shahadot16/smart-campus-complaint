@@ -1,6 +1,7 @@
 const { Complaint, Category, User, Feedback, AuditLog } = require('../models');
 const audit = require('../utils/audit');
 const realtime = require('../utils/realtime');
+const { slaUpdateFor } = require('../utils/sla');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess, getPagination, buildMeta, escapeRegex } = require('../utils/response');
 const { changeStatus, assignStaff, commitChange } = require('../utils/complaintService');
@@ -67,7 +68,7 @@ exports.setPriority = async (req, res) => {
   if (['closed', 'rejected'].includes(complaint.status)) throw ApiError.badRequest('This complaint is no longer active');
   if (priority === complaint.priority) throw ApiError.badRequest(`Priority is already ${priority}`);
 
-  const updated = await commitChange(complaint, complaint.status, { priority }, [
+  const updated = await commitChange(complaint, complaint.status, { priority, ...(await slaUpdateFor(complaint, { priority })) }, [
     {
       changedBy: req.user._id,
       type: 'priority',

@@ -10,7 +10,10 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  Map,
+  MapPin,
   Menu,
+  Timer,
   ShieldCheck,
   Tags,
   UserCircle,
@@ -39,11 +42,15 @@ const NAV = {
     { to: '/admin/users', label: 'Users', icon: Users },
     { to: '/admin/categories', label: 'Categories', icon: Tags },
     { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
+    { to: '/admin/sla', label: 'SLA & Jobs', icon: Timer },
+    { to: '/admin/locations', label: 'Locations & QR', icon: MapPin },
+    { to: '/map', label: 'Campus Map', icon: Map },
     { to: '/admin/audit-log', label: 'Audit Log', icon: History },
   ],
   staff: [
     { to: '/staff', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/staff/tasks', label: 'My Tasks', icon: ListChecks },
+    { to: '/map', label: 'Campus Map', icon: Map },
   ],
 }
 

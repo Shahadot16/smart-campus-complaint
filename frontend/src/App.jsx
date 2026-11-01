@@ -8,13 +8,17 @@ import AuditLog from './pages/admin/AuditLog'
 import AdminCategories from './pages/admin/Categories'
 import AdminComplaints from './pages/admin/Complaints'
 import AdminDashboard from './pages/admin/Dashboard'
+import Locations from './pages/admin/Locations'
+import QrSheet from './pages/admin/QrSheet'
 import AdminReports from './pages/admin/Reports'
+import SlaSettings from './pages/admin/SlaSettings'
 import AdminUsers from './pages/admin/Users'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import ResetPassword from './pages/auth/ResetPassword'
 import VerifyEmail from './pages/auth/VerifyEmail'
+import CampusMap from './pages/shared/CampusMap'
 import ComplaintDetail from './pages/shared/ComplaintDetail'
 import NotFound from './pages/shared/NotFound'
 import Notifications from './pages/shared/Notifications'
@@ -50,6 +54,11 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
       </Route>
 
+      {/* Full-page printable view, outside the app chrome */}
+      <Route element={<ProtectedRoute roles={['admin']} />}>
+        <Route path="/admin/locations/:id/qr" element={<QrSheet />} />
+      </Route>
+
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route element={<ProtectedRoute roles={['student']} />}>
@@ -65,6 +74,12 @@ export default function App() {
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/audit-log" element={<AuditLog />} />
+            <Route path="/admin/sla" element={<SlaSettings />} />
+            <Route path="/admin/locations" element={<Locations />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={['admin', 'staff']} />}>
+            <Route path="/map" element={<CampusMap />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={['staff']} />}>

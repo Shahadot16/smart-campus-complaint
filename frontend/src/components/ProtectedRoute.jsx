@@ -8,7 +8,7 @@ export default function ProtectedRoute({ roles }) {
   const location = useLocation()
 
   if (loading) return <PageLoader label="Checking your session…" />
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
   if (roles && !roles.includes(user.role)) return <Navigate to={HOME_BY_ROLE[user.role] || '/'} replace />
   return <Outlet />
 }

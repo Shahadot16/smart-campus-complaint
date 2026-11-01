@@ -31,6 +31,7 @@ exports.send = async (req, res) => {
   const others = [complaint.student, complaint.assignedStaff].filter((id) => id && String(id) !== String(req.user._id));
   const offline = others.filter((id) => !realtime.isOnline(id));
   await notify(offline, {
+    email: 'chatMessages',
     title: `New message on ${complaint.trackingCode}`,
     message: `${req.user.name}: ${req.body.text.slice(0, 150)}`,
     complaint,

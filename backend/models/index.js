@@ -12,4 +12,7 @@ module.exports = {
   AuthToken: require('./AuthToken'),
   AuditLog: require('./AuditLog'),
   Message: require('./Message'),
+  SlaPolicy: require('./SlaPolicy'),
+  Location: require('./Location'),
+  JobRun: require('./JobRun'),
 };

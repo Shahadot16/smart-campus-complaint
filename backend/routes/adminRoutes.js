@@ -5,6 +5,8 @@ const validate = require('../middleware/validate');
 const cv = require('../validators/complaintValidators');
 const av = require('../validators/adminValidators');
 const ctrl = require('../controllers/adminController');
+const sla = require('../controllers/slaController');
+const locations = require('../controllers/locationController');
 
 const router = express.Router();
 
@@ -26,5 +28,16 @@ router.patch('/categories/:id', validate(av.updateCategory), ctrl.updateCategory
 router.get('/reports', validate(av.reports), ctrl.reports);
 router.get('/audit-logs', ctrl.auditLogs);
 router.get('/online', ctrl.online);
+
+router.get('/sla-policies', sla.list);
+router.put('/sla-policies', validate(av.slaPolicy), sla.upsert);
+router.delete('/sla-policies/:id', sla.remove);
+router.get('/reports/sla', validate(av.reports), sla.report);
+
+router.get('/jobs', sla.jobs);
+router.post('/jobs/:name/run', sla.runJob);
+
+router.post('/locations', validate(av.createLocation), locations.create);
+router.patch('/locations/:id', validate(av.updateLocation), locations.update);
 
 module.exports = router;

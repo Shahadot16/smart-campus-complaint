@@ -50,7 +50,7 @@ exports.login = [
   body('password').isString().notEmpty().withMessage('Password is required'),
 ];
 
-exports.updateProfile = [name().optional(), department(), phone()];
+exports.updateProfile = [name().optional(), department(), phone(), body('emailPrefs').optional().isObject().withMessage('Invalid email preferences')];
 
 exports.changePassword = [
   body('currentPassword').isString().notEmpty().withMessage('Current password is required'),

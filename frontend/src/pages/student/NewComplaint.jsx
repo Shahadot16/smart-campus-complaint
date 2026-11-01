@@ -1,28 +1,32 @@
-import { CheckCircle2, Send } from 'lucide-react'
-import { useState } from 'react'
+import { CheckCircle2, QrCode, Send } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import ImagePicker from '../../components/ImagePicker'
+import LocationPicker from '../../components/LocationPicker'
 import { ErrorState, Field, PageHeader, PageLoader, Spinner } from '../../components/ui'
 import useApi from '../../hooks/useApi'
-import { commonApi, complaintApi, errorMessage, fieldErrors } from '../../services/api'
+import { commonApi, complaintApi, errorMessage, fieldErrors, locationApi } from '../../services/api'
 import { PRIORITY_OPTIONS } from '../../utils/constants'
 
-const EMPTY = { title: '', description: '', category: '', building: '', room: '', priority: 'medium' }
+const EMPTY = { title: '', description: '', category: '', priority: 'medium' }
+const NO_PLACE = { place: '', buildingId: '', building: '', room: '' }
 
 function validate(f) {
   const e = {}
   if (f.title.trim().length < 5 || f.title.trim().length > 120) e.title = 'Title must be 5–120 characters'
   if (f.description.trim().length < 10 || f.description.trim().length > 2000) e.description = 'Description must be 10–2000 characters'
   if (!f.category) e.category = 'Please choose a category'
-  if (!f.building.trim()) e.building = 'Building is required'
   return e
 }
 
 export default function NewComplaint() {
   const navigate = useNavigate()
   const { data: categories, loading, error, reload } = useApi(() => commonApi.categories(), [])
+  const [params] = useSearchParams()
   const [form, setForm] = useState(EMPTY)
+  const [loc, setLoc] = useState(NO_PLACE)
+  const [scanned, setScanned] = useState(null)
   const [files, setFiles] = useState([])
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -30,14 +34,33 @@ export default function NewComplaint() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
+  // Opened from a QR sticker (?loc=CODE): pre-fill the location.
+  const qrCode = params.get('loc')
+  useEffect(() => {
+    if (!qrCode) return
+    locationApi
+      .byCode(qrCode)
+      .then((res) => {
+        const l = res.data
+        const buildingId = l.type === 'building' ? l._id : l.building?._id
+        setLoc({ place: l._id, buildingId, building: l.type === 'building' ? l.name : l.building?.name, room: '' })
+        setScanned(l.type === 'building' ? l.name : `${l.building?.name} · ${l.parent?.type === 'floor' ? `${l.parent.name}, ` : ''}${l.name}`)
+      })
+      .catch(() => toast.error('This QR code is not recognised. Please choose the location manually.'))
+  }, [qrCode])
+
   async function onSubmit(e) {
     e.preventDefault()
     const errs = validate(form)
+    if (!loc.place && !loc.building.trim()) errs.building = 'Please choose or type the building'
     setErrors(errs)
     if (Object.keys(errs).length) return
 
     const fd = new FormData()
     for (const [k, v] of Object.entries(form)) fd.append(k, v.trim())
+    if (loc.place) fd.append('place', loc.place)
+    fd.append('building', loc.building.trim())
+    fd.append('room', loc.room.trim())
     files.forEach((f) => fd.append('images', f))
 
     setSubmitting(true)
@@ -73,6 +96,8 @@ export default function NewComplaint() {
             onClick={() => {
               setCreated(null)
               setForm(EMPTY)
+              setLoc(NO_PLACE)
+              setScanned(null)
               setFiles([])
             }}
           >
@@ -118,14 +143,15 @@ export default function NewComplaint() {
           </Field>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Building" htmlFor="building" error={errors.building} required>
-            <input id="building" className={cls('building')} value={form.building} onChange={set('building')} maxLength={80} placeholder="e.g. Academic Block A" />
-          </Field>
-          <Field label="Room / area" htmlFor="room" error={errors.room}>
-            <input id="room" className={cls('room')} value={form.room} onChange={set('room')} maxLength={40} placeholder="e.g. 204 or 2nd floor washroom" />
-          </Field>
-        </div>
+        {scanned && (
+          <div className="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm text-brand-700">
+            <QrCode className="size-5 shrink-0" aria-hidden="true" />
+            <span>
+              Location from QR code: <strong>{scanned}</strong>
+            </span>
+          </div>
+        )}
+        <LocationPicker value={loc} onChange={(v) => (setLoc(v), setScanned(null))} errors={errors} />
 
         <Field label="Description" htmlFor="description" error={errors.description} hint={`${form.description.length}/2000`} required>
           <textarea

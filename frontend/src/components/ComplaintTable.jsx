@@ -1,6 +1,7 @@
 import { ChevronRight, MapPin, RotateCcw } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { formatDate, timeAgo } from '../utils/format'
+import SlaBadge from './SlaBadge'
 import { PriorityBadge, StatusBadge } from './ui'
 
 /**
@@ -24,6 +25,7 @@ export default function ComplaintTable({ items, columns = {} }) {
               {columns.staff && <th className="table-head">Assigned to</th>}
               <th className="table-head">Priority</th>
               <th className="table-head">Status</th>
+              <th className="table-head">SLA</th>
               <th className="table-head">Date</th>
               <th className="table-head w-8">
                 <span className="sr-only">Open</span>
@@ -71,6 +73,9 @@ export default function ComplaintTable({ items, columns = {} }) {
                     )}
                   </div>
                 </td>
+                <td className="table-cell">
+                  <SlaBadge complaint={c} compact />
+                </td>
                 <td className="table-cell text-xs whitespace-nowrap text-ink-soft" title={formatDate(c.createdAt)}>
                   {formatDate(c.createdAt)}
                 </td>
@@ -97,7 +102,10 @@ export default function ComplaintTable({ items, columns = {} }) {
                 {c.location?.room ? `, ${c.location.room}` : ''}
               </p>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-soft">
-                <PriorityBadge priority={c.priority} />
+                <span className="flex items-center gap-2">
+                  <PriorityBadge priority={c.priority} />
+                  <SlaBadge complaint={c} compact />
+                </span>
                 <span>
                   {columns.staff && (c.assignedStaff?.name ? `${c.assignedStaff.name} · ` : 'Unassigned · ')}
                   {timeAgo(c.createdAt)}

@@ -119,12 +119,26 @@ export const adminApi = {
   reports: (params) => data(api.get('/admin/reports', { params })),
   auditLogs: (params) => data(api.get('/admin/audit-logs', { params })),
   online: () => data(api.get('/admin/online')),
+  slaPolicies: () => data(api.get('/admin/sla-policies')),
+  saveSlaPolicy: (body) => data(api.put('/admin/sla-policies', body)),
+  deleteSlaPolicy: (id) => data(api.delete(`/admin/sla-policies/${id}`)),
+  slaReport: (params) => data(api.get('/admin/reports/sla', { params })),
+  jobs: () => data(api.get('/admin/jobs')),
+  runJob: (name) => data(api.post(`/admin/jobs/${name}/run`)),
+  createLocation: (body) => data(api.post('/admin/locations', body)),
+  updateLocation: (id, body) => data(api.patch(`/admin/locations/${id}`, body)),
 }
 
 export const staffApi = {
   complaints: (params) => data(api.get('/staff/complaints', { params })),
   stats: () => data(api.get('/staff/stats')),
   setStatus: (id, body) => data(api.patch(`/staff/complaints/${id}/status`, body)),
+}
+
+export const locationApi = {
+  tree: (params) => data(api.get('/locations', { params })),
+  stats: () => data(api.get('/locations/stats')),
+  byCode: (code) => data(api.get(`/locations/code/${encodeURIComponent(code)}`)),
 }
 
 export const commonApi = {

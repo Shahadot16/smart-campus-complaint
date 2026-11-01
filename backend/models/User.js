@@ -21,6 +21,14 @@ const userSchema = new mongoose.Schema(
       pendingSecret: { type: String, select: false },
     },
     // Brute-force protection: the account is locked after repeated failures.
+    // Which events are also sent by email (in-app notifications are always on).
+    emailPrefs: {
+      statusUpdates: { type: Boolean, default: true },
+      assignments: { type: Boolean, default: true },
+      slaAlerts: { type: Boolean, default: true },
+      chatMessages: { type: Boolean, default: false },
+      dailyDigest: { type: Boolean, default: true },
+    },
     failedLogins: { type: Number, default: 0 },
     lockUntil: Date,
   },

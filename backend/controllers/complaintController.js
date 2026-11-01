@@ -9,6 +9,8 @@ const { verifyImages, saveImages, filePath } = require('../utils/fileStorage');
 const { generateTrackingCode, changeStatus, addNote } = require('../utils/complaintService');
 const { listComplaints, statusCounts } = require('../utils/complaintQuery');
 const { allowedNextStatuses, STATUS_LABELS } = require('../utils/workflow');
+const { computeDueDates, slaUpdateFor } = require('../utils/sla');
+const { resolvePlace } = require('../utils/locations');
 const { loadAccessibleComplaint, isOwner, isAssignedStaff, assertObjectId, canAccessComplaint } = require('../utils/access');
 
 const EDITABLE_STATUSES = ['submitted', 'needs_information'];
@@ -51,9 +53,13 @@ function permissionsFor(user, complaint, hasFeedback) {
 
 // POST /api/complaints  (multipart: fields + optional `images`)
 exports.create = async (req, res) => {
-  const { title, description, category, building, room, priority } = req.body;
+  const { title, description, category, priority = 'medium' } = req.body;
   await getActiveCategory(category);
   verifyImages(req.files); // reject bad files before anything is written
+  // A picked or scanned location fills in the building/room names.
+  const location = await resolvePlace(req.body);
+  const createdAt = new Date();
+  const due = await computeDueDates(createdAt, priority, category);
 
   const complaint = await withTransaction(async (session) => {
     const trackingCode = await generateTrackingCode(session);
@@ -65,9 +71,11 @@ exports.create = async (req, res) => {
           category,
           title,
           description,
-          location: { building, room: room || '' },
-          priority: priority || 'medium',
+          location,
+          priority,
           status: 'submitted',
+          sla: due,
+          createdAt,
         },
       ],
       { session }
@@ -171,6 +179,10 @@ exports.update = async (req, res) => {
   const { title, description, category, building, room, priority } = req.body;
   if (category && String(category) !== String(complaint.category)) await getActiveCategory(category);
 
+  if ((priority && priority !== complaint.priority) || (category && String(category) !== String(complaint.category))) {
+    const sla = await slaUpdateFor(complaint, { priority: priority || complaint.priority, category: category || complaint.category });
+    for (const [k, v] of Object.entries(sla)) complaint.set(k, v);
+  }
   if (title !== undefined) complaint.title = title;
   if (description !== undefined) complaint.description = description;
   if (category !== undefined) complaint.category = category;

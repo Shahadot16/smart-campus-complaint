@@ -6,15 +6,21 @@ const title = () => body('title').trim().isLength({ min: 5, max: 120 }).withMess
 const description = () =>
   body('description').trim().isLength({ min: 10, max: 2000 }).withMessage('Description must be 10–2000 characters');
 const category = () => body('category').isMongoId().withMessage('Please choose a valid category');
+// Either a location id from the campus tree, or a typed building name.
 const building = () =>
-  body('building').trim().isLength({ min: 1, max: 80 }).withMessage('Building is required (max 80 characters)');
+  body('building')
+    .if(body('place').not().exists({ values: 'falsy' }))
+    .trim()
+    .isLength({ min: 1, max: 80 })
+    .withMessage('Building is required (max 80 characters)');
+const place = () => body('place').optional({ values: 'falsy' }).isMongoId().withMessage('Invalid location');
 const room = () => body('room').optional().trim().isLength({ max: 40 }).withMessage('Room is too long');
 const priority = () =>
   body('priority').optional().isIn(PRIORITIES).withMessage(`Priority must be one of: ${PRIORITIES.join(', ')}`);
 const note = (field = 'note', max = 2000) =>
   body(field).optional().isString().trim().isLength({ max }).withMessage(`Note must be at most ${max} characters`);
 
-exports.create = [title(), description(), category(), building(), room(), priority()];
+exports.create = [title(), description(), category(), building(), room(), place(), priority()];
 
 // Owners may only edit descriptive fields; status/assignment are rejected outright.
 exports.update = [

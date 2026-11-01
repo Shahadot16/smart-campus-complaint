@@ -19,6 +19,7 @@ import toast from 'react-hot-toast'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ChatPanel from '../../components/ChatPanel'
 import ImagePicker from '../../components/ImagePicker'
+import SlaBadge from '../../components/SlaBadge'
 import StarRating from '../../components/StarRating'
 import { Avatar, ErrorState, Field, Modal, PageLoader, PriorityBadge, Spinner, StatusBadge } from '../../components/ui'
 import { HOME_BY_ROLE, useAuth } from '../../context/AuthContext'
@@ -554,6 +555,7 @@ export default function ComplaintDetail() {
             <span className="font-mono text-sm font-medium text-navy-800">{c.trackingCode}</span>
             <StatusBadge status={c.status} />
             <PriorityBadge priority={c.priority} />
+            <SlaBadge complaint={c} />
           </div>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy-900">{c.title}</h1>
           <p className="mt-1 text-sm text-ink-soft">
@@ -683,6 +685,18 @@ export default function ComplaintDetail() {
                 <PriorityBadge priority={c.priority} />
               )}
             </InfoRow>
+            {c.sla?.resolveDueAt && (
+              <InfoRow icon={CalendarDays} label="SLA deadlines">
+                <span className="block">Respond by {formatDateTime(c.sla.responseDueAt)}</span>
+                <span className="block">Resolve by {formatDateTime(c.sla.resolveDueAt)}</span>
+                {(c.sla.responseBreached || c.sla.resolveBreached) && (
+                  <span className="mt-1 block text-xs font-medium text-red-600">
+                    {c.sla.resolveBreached ? 'Resolution deadline missed' : 'Response deadline missed'}
+                    {c.sla.escalationLevel >= 3 ? ' · escalated' : ''}
+                  </span>
+                )}
+              </InfoRow>
+            )}
             {(c.resolvedAt || c.closedAt) && (
               <InfoRow icon={CalendarDays} label={c.closedAt ? 'Closed' : 'Resolved'}>
                 {formatDateTime(c.closedAt || c.resolvedAt)}

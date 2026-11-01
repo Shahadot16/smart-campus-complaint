@@ -57,6 +57,58 @@ function ProfileForm() {
   )
 }
 
+const EMAIL_PREFS = [
+  ['statusUpdates', 'Status updates on my complaints', ['student', 'staff', 'admin']],
+  ['assignments', 'New assignments', ['staff', 'admin']],
+  ['slaAlerts', 'SLA warnings and escalations', ['staff', 'admin']],
+  ['chatMessages', 'Chat messages while I am offline', ['student', 'staff', 'admin']],
+  ['dailyDigest', 'Daily summary email (8 AM)', ['admin']],
+]
+
+function EmailPrefsForm() {
+  const { user, setUser } = useAuth()
+  const [busy, setBusy] = useState(null)
+
+  async function toggle(key) {
+    setBusy(key)
+    try {
+      const res = await authApi.updateProfile({ emailPrefs: { [key]: !(user.emailPrefs?.[key] ?? true) } })
+      setUser(res.data.user)
+    } catch (err) {
+      toast.error(errorMessage(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div className="card p-5">
+      <h2 className="font-semibold text-navy-900">Email notifications</h2>
+      <p className="mt-0.5 text-sm text-ink-soft">In-app notifications are always on. Choose what is also sent to {user.email}.</p>
+      <ul className="mt-4 divide-y divide-line">
+        {EMAIL_PREFS.filter(([, , roles]) => roles.includes(user.role)).map(([key, label]) => {
+          const on = user.emailPrefs?.[key] ?? true
+          return (
+            <li key={key} className="flex items-center justify-between py-2.5">
+              <span className="text-sm text-ink">{label}</span>
+              <button
+                role="switch"
+                aria-checked={on}
+                aria-label={label}
+                disabled={busy === key}
+                onClick={() => toggle(key)}
+                className={`relative h-6 w-11 rounded-full transition ${on ? 'bg-brand-600' : 'bg-slate-300'}`}
+              >
+                <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
 function PasswordForm() {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirm: '' })
   const [errors, setErrors] = useState({})
@@ -129,6 +181,7 @@ export default function Profile() {
         </div>
       </div>
       <ProfileForm />
+      <EmailPrefsForm />
       <PasswordForm />
       <SecuritySettings />
     </div>

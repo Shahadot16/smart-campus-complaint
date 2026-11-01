@@ -10,6 +10,7 @@ const { randomToken, hashToken } = require('../utils/tokens');
 const { sendMail, button, isRealMail } = require('../utils/mailer');
 
 const DAY = 24 * 60 * 60 * 1000;
+const EMAIL_PREFS = ['statusUpdates', 'assignments', 'slaAlerts', 'chatMessages', 'dailyDigest'];
 // In development without SMTP, emailed links are also returned so the flow can be tested.
 const exposeDevLinks = !config.isProduction && !isRealMail;
 
@@ -74,6 +75,7 @@ function profile(user) {
     isActive: user.isActive,
     emailVerified: Boolean(user.emailVerified),
     twoFactorEnabled: Boolean(user.twoFactor?.enabled),
+    emailPrefs: user.emailPrefs?.toObject ? user.emailPrefs.toObject() : user.emailPrefs || {},
     createdAt: user.createdAt,
     lastLoginAt: user.lastLoginAt,
   };
@@ -246,6 +248,9 @@ exports.logout = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   for (const field of ['name', 'department', 'phone']) {
     if (req.body[field] !== undefined) req.user[field] = req.body[field];
+  }
+  for (const [key, value] of Object.entries(req.body.emailPrefs || {})) {
+    if (EMAIL_PREFS.includes(key)) req.user.set(`emailPrefs.${key}`, Boolean(value));
   }
   await req.user.save();
   sendSuccess(res, { message: 'Profile updated', data: { user: profile(req.user) } });

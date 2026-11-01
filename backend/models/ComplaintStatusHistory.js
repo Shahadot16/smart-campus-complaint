@@ -6,8 +6,9 @@ const { STATUSES } = require('../utils/constants');
 const historySchema = new mongoose.Schema(
   {
     complaint: { type: mongoose.Schema.Types.ObjectId, ref: 'Complaint', required: true },
-    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    type: { type: String, enum: ['status', 'assignment', 'priority', 'note'], default: 'status' },
+    // Empty for automatic (system) events such as SLA escalations.
+    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    type: { type: String, enum: ['status', 'assignment', 'priority', 'note', 'sla'], default: 'status' },
     oldStatus: { type: String, enum: [...STATUSES, null], default: null },
     newStatus: { type: String, enum: STATUSES, required: true },
     note: { type: String, trim: true, maxlength: 2000, default: '' },

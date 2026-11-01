@@ -4,7 +4,8 @@
  *   npm run seed -- --reset -> wipe all collections and reseed
  * Admin credentials can be overridden with SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
  */
-const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message } = require('../models');
+const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun } = require('../models');
+const { computeDueDates } = require('./sla');
 const university = require('../config/university');
 
 const DEMO_PASSWORDS = { admin: 'Admin@123', staff: 'Staff@123', student: 'Student@123' };
@@ -22,6 +23,53 @@ const CATEGORIES = [
 
 const DOMAIN = university.emailDomain;
 
+/*
+ * Sample campus layout for the engineering faculty. Building names and positions are
+ * placeholders around the IUBAT campus centre — admins can rename/move them in the app.
+ * [name, code, department, [lat offset, lng offset], { floorName: [rooms] }]
+ */
+const CAMPUS = [
+  ['Main Academic Building', 'MAB', '', [0.0004, -0.0006], {
+    '2nd floor': ['Room 210', 'Room 215'],
+    '4th floor': ['Room 405', 'Room 410', 'Seminar Hall'],
+  }],
+  ['Engineering Building', 'ENG', 'CSE', [-0.0003, 0.0005], {
+    '2nd floor': ['CSE Lab 1', 'CSE Lab 3', 'Networking Lab'],
+    '3rd floor': ['EEE Electronics Lab', 'EEE Power Lab', '3rd floor washroom'],
+    '4th floor': ['Civil Materials Lab', 'Surveying Lab'],
+  }],
+  ['Engineering Workshop', 'WKS', 'ME', [-0.0009, -0.0002], {
+    'Ground floor': ['ME Workshop', 'Machine Shop', 'Welding Bay'],
+  }],
+  ['Central Library', 'LIB', '', [0.0009, 0.0003], {
+    'Ground floor': ['Circulation Desk', 'Ground floor'],
+    '1st floor': ['Reading Room', '1st floor'],
+  }],
+  ['Study Arena & Open Auditorium', 'ARENA', '', [0.0001, 0.0012], {}],
+  ['Central Cafeteria', 'CAF', '', [-0.0006, -0.0011], {}],
+];
+
+async function seedLocations() {
+  const { lat, lng } = university.location;
+  const places = {};
+  for (const [name, code, department, [dLat, dLng], floors] of CAMPUS) {
+    const b = await Location.create({ name, code, type: 'building', department, geo: { lat: lat + dLat, lng: lng + dLng } });
+    places[name] = { _id: b._id, rooms: {} };
+    let f = 0;
+    for (const [floorName, rooms] of Object.entries(floors)) {
+      f += 1;
+      const floor = await Location.create({ name: floorName, code: `${code}-F${f}`, type: 'floor', parent: b._id, building: b._id, department });
+      let r = 0;
+      for (const room of rooms) {
+        r += 1;
+        const doc = await Location.create({ name: room, code: `${code}-${f}${String(r).padStart(2, '0')}`, type: 'room', parent: floor._id, building: b._id, department });
+        places[name].rooms[room] = doc._id;
+      }
+    }
+  }
+  return places;
+}
+
 const day = 24 * 60 * 60 * 1000;
 const ago = (days, hours = 0) => new Date(Date.now() - days * day - hours * 36e5);
 
@@ -33,6 +81,7 @@ async function makeUser(data, password) {
 
 async function seed() {
   await Department.insertMany(university.departments);
+  const places = await seedLocations();
   const cats = Object.fromEntries(
     (await Category.insertMany(CATEGORIES.map(([name, description]) => ({ name, description })))).map((c) => [c.name, c])
   );
@@ -95,13 +144,15 @@ async function seed() {
   for (const [owner, cat, title, description, building, room, priority, finalStatus, staff, daysAgo] of samples) {
     seq += 1;
     const created = ago(daysAgo, 5);
+    const place = places[building]?.rooms[room] || places[building]?._id || null;
     const complaint = await Complaint.create({
+      sla: await computeDueDates(created, priority, cats[cat]._id),
       trackingCode: `CMP-${year}-${String(seq).padStart(4, '0')}`,
       student: owner._id,
       category: cats[cat]._id,
       title,
       description,
-      location: { building, room },
+      location: { building, room, place },
       priority,
       status: finalStatus,
       assignedStaff: staff?._id || null,
@@ -118,6 +169,7 @@ async function seed() {
       const actor = next === 'in_progress' || next === 'resolved' ? staff : next === 'closed' ? owner : admin;
       const note = next === 'assigned' ? `Assigned to ${staff.name}` : notes[next] || '';
       history.push({ changedBy: actor._id, oldStatus: prev, newStatus: next, note, createdAt: new Date(t) });
+      if (!complaint.sla.firstResponseAt) complaint.sla.firstResponseAt = new Date(t);
       if (next === 'resolved') complaint.resolvedAt = new Date(t);
       if (next === 'closed') complaint.closedAt = new Date(t);
       prev = next;
@@ -157,7 +209,7 @@ async function seedIfEmpty() {
 
 async function reset() {
   await Promise.all(
-    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message].map((m) => m.deleteMany({}))
+    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun].map((m) => m.deleteMany({}))
   );
 }
 
