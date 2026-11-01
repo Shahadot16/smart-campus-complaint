@@ -7,14 +7,15 @@ const ApiError = require('./ApiError');
  * names come from the tree; otherwise the typed building/room are used.
  */
 async function resolvePlace({ place, building, room }) {
-  if (!place) return { building: String(building || '').trim(), room: String(room || '').trim(), place: null };
+  if (!place) return { building: String(building || '').trim(), room: String(room || '').trim(), place: null, department: '' };
 
-  const loc = await Location.findOne({ _id: place, isActive: true }).populate('building', 'name').populate('parent', 'name type');
+  const loc = await Location.findOne({ _id: place, isActive: true }).populate('building', 'name department').populate('parent', 'name type');
   if (!loc) throw ApiError.badRequest('The selected location no longer exists');
+  const department = loc.department || loc.building?.department || '';
 
-  if (loc.type === 'building') return { building: loc.name, room: String(room || '').trim(), place: loc._id };
+  if (loc.type === 'building') return { building: loc.name, room: String(room || '').trim(), place: loc._id, department };
   const floor = loc.type === 'room' && loc.parent?.type === 'floor' ? `${loc.parent.name}, ` : '';
-  return { building: loc.building?.name || '', room: `${floor}${loc.name}`.slice(0, 40), place: loc._id };
+  return { building: loc.building?.name || '', room: `${floor}${loc.name}`.slice(0, 40), place: loc._id, department };
 }
 
 /** Nests a flat location list into building -> floor -> room. */

@@ -30,8 +30,14 @@ export const STATUS_ACTIONS = {
   rejected: 'Reject',
 }
 
-export const ROLE_LABELS = { student: 'Student', admin: 'Administrator', staff: 'Maintenance Staff' }
+export const ROLE_LABELS = { student: 'Student', admin: 'Administrator', staff: 'Maintenance Staff', dept_head: 'Department Head' }
 
 export const MAX_IMAGES = 5
 export const MAX_IMAGE_MB = 5
 export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+export const ASSET_STATUS = {
+  operational: { label: 'Operational', className: 'bg-emerald-50 text-emerald-700' },
+  under_repair: { label: 'Under repair', className: 'bg-amber-50 text-amber-800' },
+  retired: { label: 'Retired', className: 'bg-slate-100 text-slate-500' },
+}

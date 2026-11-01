@@ -3,7 +3,7 @@ import { authApi, setUnauthorizedHandler } from '../services/api'
 
 const AuthContext = createContext(null)
 
-export const HOME_BY_ROLE = { student: '/student', admin: '/admin', staff: '/staff' }
+export const HOME_BY_ROLE = { student: '/student', admin: '/admin', staff: '/staff', dept_head: '/dept' }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)

@@ -10,6 +10,14 @@ import AdminComplaints from './pages/admin/Complaints'
 import AdminDashboard from './pages/admin/Dashboard'
 import Locations from './pages/admin/Locations'
 import QrSheet from './pages/admin/QrSheet'
+import Inventory from './pages/admin/Inventory'
+import Roles from './pages/admin/Roles'
+import StaffProfiles from './pages/admin/StaffProfiles'
+import DeptComplaints from './pages/dept/Complaints'
+import DeptDashboard from './pages/dept/Dashboard'
+import Approvals from './pages/shared/Approvals'
+import AssetDetail from './pages/shared/AssetDetail'
+import Assets from './pages/shared/Assets'
 import AdminReports from './pages/admin/Reports'
 import SlaSettings from './pages/admin/SlaSettings'
 import AdminUsers from './pages/admin/Users'
@@ -76,9 +84,26 @@ export default function App() {
             <Route path="/admin/audit-log" element={<AuditLog />} />
             <Route path="/admin/sla" element={<SlaSettings />} />
             <Route path="/admin/locations" element={<Locations />} />
+            <Route path="/admin/inventory" element={<Inventory />} />
+            <Route path="/admin/staff" element={<StaffProfiles />} />
+            <Route path="/admin/roles" element={<Roles />} />
           </Route>
 
-          <Route element={<ProtectedRoute roles={['admin', 'staff']} />}>
+          <Route element={<ProtectedRoute roles={['dept_head']} />}>
+            <Route path="/dept" element={<DeptDashboard />} />
+            <Route path="/dept/complaints" element={<DeptComplaints />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={['admin', 'dept_head']} />}>
+            <Route path="/approvals" element={<Approvals />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={['admin', 'staff', 'dept_head']} />}>
+            <Route path="/assets" element={<Assets />} />
+            <Route path="/assets/:id" element={<AssetDetail />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={['admin', 'staff', 'dept_head']} />}>
             <Route path="/map" element={<CampusMap />} />
           </Route>
 

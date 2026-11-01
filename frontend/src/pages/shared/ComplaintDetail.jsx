@@ -1,6 +1,8 @@
 import {
   ArrowLeft,
+  Box,
   Building2,
+  Sparkles,
   CalendarDays,
   CheckCircle2,
   Flag,
@@ -18,6 +20,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ChatPanel from '../../components/ChatPanel'
+import { PartsPanel, WorkOrdersPanel } from '../../components/RepairPanels'
 import ImagePicker from '../../components/ImagePicker'
 import SlaBadge from '../../components/SlaBadge'
 import StarRating from '../../components/StarRating'
@@ -124,7 +127,8 @@ function StatusModal({ target, complaint, role, onClose, onDone }) {
 }
 
 function AssignModal({ complaint, onClose, onDone }) {
-  const { data: staff, loading } = useApi(() => adminApi.staff(), [])
+  // Staff ranked by skill, building, workload, rating and SLA record.
+  const { data: staff, loading } = useApi(() => adminApi.suggestStaff(complaint._id), [complaint._id])
   const { data: online } = useApi(() => adminApi.online(), [])
   const isOnline = (id) => online?.includes(String(id))
   const [form, setForm] = useState({ staffId: complaint.assignedStaff?._id || '', priority: complaint.priority, note: '' })
@@ -158,15 +162,18 @@ function AssignModal({ complaint, onClose, onDone }) {
         <form id="assign-form" onSubmit={submit} className="space-y-4">
           <Field label="Staff member" htmlFor="a-staff" required>
             {staff.length ? (
-              <div className="max-h-64 space-y-2 overflow-y-auto" id="a-staff">
+              <div className="max-h-72 space-y-2 overflow-y-auto" id="a-staff">
+                <p className="flex items-center gap-1.5 text-xs text-ink-muted">
+                  <Sparkles className="size-3.5 text-brand-600" aria-hidden="true" /> Ranked by skill, building, workload, rating and SLA record
+                </p>
                 {staff.map((s) => (
                   <label
                     key={s.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
+                    className={`flex items-center gap-3 rounded-lg border p-3 transition ${
                       form.staffId === s.id ? 'border-brand-500 bg-brand-50' : 'border-line hover:bg-slate-50'
-                    }`}
+                    } ${s.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                   >
-                    <input type="radio" name="staff" value={s.id} checked={form.staffId === s.id} onChange={() => setForm({ ...form, staffId: s.id })} />
+                    <input type="radio" name="staff" value={s.id} disabled={!s.available} checked={form.staffId === s.id} onChange={() => setForm({ ...form, staffId: s.id })} />
                     <span className="relative">
                       <Avatar name={s.name} className="size-8 text-xs" />
                       <span
@@ -176,11 +183,25 @@ function AssignModal({ complaint, onClose, onDone }) {
                     </span>
                     <span className="flex-1">
                       <span className="block text-sm font-medium text-ink">{s.name}</span>
-                      <span className="block text-xs text-ink-muted">{s.department || s.email}</span>
+                      <span className="block text-xs text-ink-muted">
+                        {s.department} · {s.openTasks}/{s.maxOpenTasks} open
+                      </span>
+                      {s.reasons.length > 0 && (
+                        <span className="mt-1 flex flex-wrap gap-1">
+                          {s.reasons.map((r) => (
+                            <span key={r} className={`chip text-[10px] ${s.available ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-700'}`}>
+                              {r}
+                            </span>
+                          ))}
+                        </span>
+                      )}
                     </span>
-                    <span className={`chip ${s.openTasks > 4 ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
-                      {s.openTasks} open
-                    </span>
+                    {s.available && (
+                      <span className="flex flex-col items-center" title={Object.entries(s.breakdown).map(([k, v]) => `${k}: ${v}`).join(' · ')}>
+                        <span className="text-lg font-bold text-navy-900 tabular-nums">{s.score}</span>
+                        <span className="text-[10px] text-ink-muted">match</span>
+                      </span>
+                    )}
                   </label>
                 ))}
               </div>
@@ -633,6 +654,9 @@ export default function ComplaintDetail() {
 
           <Attachments complaint={c} attachments={attachments} canUpload={p.canUpload} onDone={reload} />
 
+          {role !== 'student' && <WorkOrdersPanel complaintId={c._id} canRaise={p.canRaiseWorkOrder} />}
+          {role !== 'student' && <PartsPanel complaintId={c._id} canUse={p.canUseParts} onChanged={reload} />}
+
           <div className="card overflow-hidden">
             <h2 className="border-b border-line px-5 py-3 font-semibold text-navy-900">Activity</h2>
             <Timeline history={history} />
@@ -645,6 +669,18 @@ export default function ComplaintDetail() {
             <InfoRow icon={Tag} label="Category">
               {c.category?.name || '—'}
             </InfoRow>
+            {c.asset && (
+              <InfoRow icon={Box} label="Asset">
+                {['admin', 'staff', 'dept_head'].includes(role) ? (
+                  <Link to={`/assets/${c.asset._id}`} className="text-brand-700 hover:underline">
+                    {c.asset.name}
+                  </Link>
+                ) : (
+                  c.asset.name
+                )}
+                <span className="block font-mono text-xs text-ink-muted">{c.asset.code}</span>
+              </InfoRow>
+            )}
             <InfoRow icon={Building2} label="Location">
               {c.location?.building}
               {c.location?.room ? `, ${c.location.room}` : ''}

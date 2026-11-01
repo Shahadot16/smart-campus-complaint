@@ -15,6 +15,13 @@ const complaintSchema = new mongoose.Schema(
       place: { type: mongoose.Schema.Types.ObjectId, ref: 'Location', default: null },
     },
     priority: { type: String, enum: PRIORITIES, default: 'medium' },
+    // Engineering department responsible (from the location, else the student's department).
+    department: { type: String, trim: true, uppercase: true, maxlength: 10, default: '' },
+    asset: { type: mongoose.Schema.Types.ObjectId, ref: 'Asset', default: null },
+    // Running repair cost of spare parts used (BDT).
+    cost: {
+      parts: { type: Number, default: 0, min: 0 },
+    },
     status: { type: String, enum: STATUSES, default: 'submitted' },
     assignedStaff: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     resolutionNote: { type: String, trim: true, maxlength: 2000, default: '' },
@@ -47,5 +54,7 @@ complaintSchema.index({ category: 1 });
 complaintSchema.index({ assignedStaff: 1, status: 1 });
 complaintSchema.index({ status: 1, 'sla.resolveDueAt': 1 });
 complaintSchema.index({ 'location.place': 1 });
+complaintSchema.index({ department: 1, status: 1 });
+complaintSchema.index({ asset: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Complaint', complaintSchema);

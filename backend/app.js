@@ -56,6 +56,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/staff', require('./routes/staffRoutes'));
+app.use('/api', require('./routes/operationsRoutes'));
 app.use('/api', require('./routes/commonRoutes'));
 
 app.use('/api', notFound);

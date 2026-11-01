@@ -17,9 +17,14 @@ function isAssignedStaff(user, complaint) {
   return user.role === 'staff' && sameId(complaint.assignedStaff, user._id);
 }
 
-/** Admins see everything, students only their own, staff only their assignments. */
+function isDepartmentHead(user, complaint) {
+  return user.role === 'dept_head' && Boolean(user.department) && complaint.department === user.department;
+}
+
+/** Admins see everything, students only their own, staff their assignments, heads their department. */
 function canAccessComplaint(user, complaint) {
   if (user.role === 'admin') return true;
+  if (user.role === 'dept_head') return isDepartmentHead(user, complaint);
   if (user.role === 'student') return isOwner(user, complaint);
   if (user.role === 'staff') return isAssignedStaff(user, complaint);
   return false;
@@ -40,4 +45,4 @@ async function loadAccessibleComplaint(id, user) {
   return complaint;
 }
 
-module.exports = { sameId, isOwner, isAssignedStaff, canAccessComplaint, assertObjectId, loadAccessibleComplaint };
+module.exports = { sameId, isOwner, isAssignedStaff, isDepartmentHead, canAccessComplaint, assertObjectId, loadAccessibleComplaint };

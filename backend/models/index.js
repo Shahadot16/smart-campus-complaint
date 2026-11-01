@@ -15,4 +15,9 @@ module.exports = {
   SlaPolicy: require('./SlaPolicy'),
   Location: require('./Location'),
   JobRun: require('./JobRun'),
+  Asset: require('./Asset'),
+  SparePart: require('./SparePart'),
+  StockMovement: require('./StockMovement'),
+  WorkOrder: require('./WorkOrder'),
+  Setting: require('./Setting'),
 };

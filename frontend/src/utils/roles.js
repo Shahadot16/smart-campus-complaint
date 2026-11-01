@@ -1,8 +1,8 @@
-import { GraduationCap, ShieldCheck, Wrench } from 'lucide-react'
+import { Briefcase, GraduationCap, ShieldCheck, Wrench } from 'lucide-react'
 
 /**
  * Login-page presentation of each role. Colours follow the IUBAT logo:
- * green (students), gold (staff) and red (administration).
+ * green (students), gold (staff) and red (administration); department heads in blue.
  */
 export const LOGIN_ROLES = [
   {
@@ -27,6 +27,17 @@ export const LOGIN_ROLES = [
     idle: 'bg-amber-50 text-amber-700',
     button: 'bg-amber-600 hover:bg-amber-700',
     demo: { email: 'staff@iubat.edu', password: 'Staff@123' },
+  },
+  {
+    key: 'dept_head',
+    title: 'Dept. Head',
+    subtitle: 'Oversee your department, approve costs',
+    icon: Briefcase,
+    card: 'border-sky-500 bg-sky-50/70 ring-sky-500/30',
+    iconBox: 'bg-sky-600 text-white',
+    idle: 'bg-sky-50 text-sky-700',
+    button: 'bg-sky-600 hover:bg-sky-700',
+    demo: { email: 'cse.head@iubat.edu', password: 'Head@123' },
   },
   {
     key: 'admin',

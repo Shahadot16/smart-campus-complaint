@@ -6,7 +6,7 @@ import ImagePicker from '../../components/ImagePicker'
 import LocationPicker from '../../components/LocationPicker'
 import { ErrorState, Field, PageHeader, PageLoader, Spinner } from '../../components/ui'
 import useApi from '../../hooks/useApi'
-import { commonApi, complaintApi, errorMessage, fieldErrors, locationApi } from '../../services/api'
+import { commonApi, complaintApi, errorMessage, fieldErrors, locationApi, opsApi } from '../../services/api'
 import { PRIORITY_OPTIONS } from '../../utils/constants'
 
 const EMPTY = { title: '', description: '', category: '', priority: 'medium' }
@@ -27,6 +27,7 @@ export default function NewComplaint() {
   const [form, setForm] = useState(EMPTY)
   const [loc, setLoc] = useState(NO_PLACE)
   const [scanned, setScanned] = useState(null)
+  const [asset, setAsset] = useState(null)
   const [files, setFiles] = useState([])
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -34,7 +35,26 @@ export default function NewComplaint() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
-  // Opened from a QR sticker (?loc=CODE): pre-fill the location.
+  // Opened from an equipment sticker (?asset=CODE): pre-fill the asset, its location and category.
+  const assetCode = params.get('asset')
+  useEffect(() => {
+    if (!assetCode) return
+    opsApi
+      .assetByCode(assetCode)
+      .then((res) => {
+        const a = res.data
+        setAsset(a)
+        if (a.category) setForm((f) => ({ ...f, category: a.category }))
+        const l = a.location
+        if (l) {
+          const buildingId = l.type === 'building' ? l._id : l.building?._id
+          setLoc({ place: l._id, buildingId, building: l.type === 'building' ? l.name : l.building?.name, room: '' })
+        }
+      })
+      .catch(() => toast.error('This equipment code is not recognised.'))
+  }, [assetCode])
+
+  // Opened from a room QR sticker (?loc=CODE): pre-fill the location.
   const qrCode = params.get('loc')
   useEffect(() => {
     if (!qrCode) return
@@ -59,6 +79,7 @@ export default function NewComplaint() {
     const fd = new FormData()
     for (const [k, v] of Object.entries(form)) fd.append(k, v.trim())
     if (loc.place) fd.append('place', loc.place)
+    if (asset) fd.append('asset', asset._id)
     fd.append('building', loc.building.trim())
     fd.append('room', loc.room.trim())
     files.forEach((f) => fd.append('images', f))
@@ -98,6 +119,7 @@ export default function NewComplaint() {
               setForm(EMPTY)
               setLoc(NO_PLACE)
               setScanned(null)
+              setAsset(null)
               setFiles([])
             }}
           >
@@ -143,6 +165,17 @@ export default function NewComplaint() {
           </Field>
         </div>
 
+        {asset && (
+          <div className="flex items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800">
+            <QrCode className="size-5 shrink-0" aria-hidden="true" />
+            <span className="flex-1">
+              Reporting a problem with <strong>{asset.name}</strong> <span className="font-mono text-xs">({asset.code})</span>
+            </span>
+            <button type="button" className="text-xs underline" onClick={() => setAsset(null)}>
+              Not this item
+            </button>
+          </div>
+        )}
         {scanned && (
           <div className="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm text-brand-700">
             <QrCode className="size-5 shrink-0" aria-hidden="true" />

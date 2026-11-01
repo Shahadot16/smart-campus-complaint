@@ -126,6 +126,16 @@ export const adminApi = {
   jobs: () => data(api.get('/admin/jobs')),
   runJob: (name) => data(api.post(`/admin/jobs/${name}/run`)),
   createLocation: (body) => data(api.post('/admin/locations', body)),
+  suggestStaff: (id) => data(api.get(`/admin/complaints/${id}/suggest-staff`)),
+  updateStaffProfile: (id, body) => data(api.put(`/admin/staff/${id}/profile`, body)),
+  permissions: () => data(api.get('/permissions')),
+  createAsset: (body) => data(api.post('/admin/assets', body)),
+  updateAsset: (id, body) => data(api.patch(`/admin/assets/${id}`, body)),
+  createPart: (body) => data(api.post('/admin/parts', body)),
+  updatePart: (id, body) => data(api.patch(`/admin/parts/${id}`, body)),
+  addStock: (id, body) => data(api.post(`/admin/parts/${id}/stock`, body)),
+  partMovements: (id) => data(api.get(`/admin/parts/${id}/movements`)),
+  setWorkOrderLimits: (body) => data(api.put('/admin/work-orders/limits', body)),
   updateLocation: (id, body) => data(api.patch(`/admin/locations/${id}`, body)),
 }
 
@@ -133,6 +143,23 @@ export const staffApi = {
   complaints: (params) => data(api.get('/staff/complaints', { params })),
   stats: () => data(api.get('/staff/stats')),
   setStatus: (id, body) => data(api.patch(`/staff/complaints/${id}/status`, body)),
+}
+
+export const opsApi = {
+  assets: (params) => data(api.get('/assets', { params })),
+  asset: (id) => data(api.get(`/assets/${id}`)),
+  assetByCode: (code) => data(api.get(`/assets/code/${encodeURIComponent(code)}`)),
+  parts: (params) => data(api.get('/parts', { params })),
+  partsUsed: (id) => data(api.get(`/complaints/${id}/parts`)),
+  useParts: (id, body) => data(api.post(`/complaints/${id}/parts`, body)),
+  workOrders: (id) => data(api.get(`/complaints/${id}/work-orders`)),
+  raiseWorkOrder: (id, body) => data(api.post(`/complaints/${id}/work-orders`, body)),
+  approvals: (params) => data(api.get('/work-orders', { params })),
+  decide: (id, body) => data(api.post(`/work-orders/${id}/decision`, body)),
+  completeWorkOrder: (id) => data(api.post(`/work-orders/${id}/complete`)),
+  limits: () => data(api.get('/work-orders/limits')),
+  deptComplaints: (params) => data(api.get('/dept/complaints', { params })),
+  deptStats: () => data(api.get('/dept/stats')),
 }
 
 export const locationApi = {

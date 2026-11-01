@@ -137,7 +137,7 @@ export default function Login() {
       <h1 className="text-3xl font-bold tracking-tight text-navy-900">Welcome back</h1>
       <p className="mt-1.5 text-sm text-ink-soft">Choose your role, then sign in with your IUBAT account.</p>
 
-      <div className="mt-7 grid grid-cols-3 gap-3" role="radiogroup" aria-label="Sign in as">
+      <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Sign in as">
         {LOGIN_ROLES.map((r) => (
           <RoleCard
             key={r.key}

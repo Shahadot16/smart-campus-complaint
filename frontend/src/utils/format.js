@@ -57,3 +57,6 @@ export function formatDuration(ms) {
   if (h) return `${h}h ${m}m`
   return `${m}m`
 }
+
+/** Bangladeshi taka amount, e.g. ৳18,500 */
+export const taka = (n) => `৳${Number(n || 0).toLocaleString('en-US')}`

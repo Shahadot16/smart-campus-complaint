@@ -1,4 +1,4 @@
-const { Complaint, ComplaintStatusHistory, Counter, User } = require('../models');
+const { Complaint, ComplaintStatusHistory, Counter, User, Asset } = require('../models');
 const { withTransaction } = require('../config/db');
 const ApiError = require('./ApiError');
 const notify = require('./notify');
@@ -99,6 +99,10 @@ async function changeStatus({ complaint, actor, newStatus, note = '', internal =
     { changedBy: actor._id, type: 'status', oldStatus, newStatus, note: note.trim(), internal: Boolean(internal) },
   ]);
 
+  if (updated.asset && ['in_progress', 'resolved', 'closed'].includes(newStatus)) {
+    await Asset.updateOne({ _id: updated.asset, status: { $ne: 'retired' } }, { status: newStatus === 'in_progress' ? 'under_repair' : 'operational' });
+  }
+
   // Tell the other people involved (never the actor).
   const recipients = [updated.student, updated.assignedStaff].filter((id) => String(id) !== String(actor._id));
   await notify(recipients, {
@@ -115,7 +119,8 @@ async function changeStatus({ complaint, actor, newStatus, note = '', internal =
  * Assigns (or reassigns) an active staff member. A submitted complaint is
  * first moved to under_review so the audit trail follows the workflow.
  */
-async function assignStaff({ complaint, actor, staffId, priority, note = '' }) {
+async function assignStaff({ complaint, actor = null, staffId, priority, note = '' }) {
+  const actorId = actor?._id ?? null; // null = automatic assignment
   const staff = await User.findOne({ _id: staffId, role: 'staff' });
   if (!staff) throw ApiError.badRequest('Selected user is not a staff member');
   if (!staff.isActive) throw ApiError.badRequest('Selected staff member is inactive');
@@ -135,21 +140,21 @@ async function assignStaff({ complaint, actor, staffId, priority, note = '' }) {
   let newStatus = oldStatus;
 
   if (oldStatus === 'submitted') {
-    history.push({ changedBy: actor._id, type: 'status', oldStatus, newStatus: 'under_review', note: 'Reviewed by admin' });
+    history.push({ changedBy: actorId, type: 'status', oldStatus, newStatus: 'under_review', note: actor ? 'Reviewed by admin' : 'Reviewed automatically' });
   }
   if (oldStatus === 'submitted' || oldStatus === 'under_review') {
     newStatus = 'assigned';
     set.status = newStatus;
     history.push({
-      changedBy: actor._id,
+      changedBy: actorId,
       type: 'status',
       oldStatus: 'under_review',
       newStatus,
-      note: `Assigned to ${staff.name}${note.trim() ? ` — ${note.trim()}` : ''}`,
+      note: `${actor ? 'Assigned' : 'Auto-assigned'} to ${staff.name}${note.trim() ? ` — ${note.trim()}` : ''}`,
     });
   } else if (String(complaint.assignedStaff) !== String(staff._id)) {
     history.push({
-      changedBy: actor._id,
+      changedBy: actorId,
       type: 'assignment',
       oldStatus,
       newStatus,
@@ -162,7 +167,7 @@ async function assignStaff({ complaint, actor, staffId, priority, note = '' }) {
     set.priority = priority;
     Object.assign(set, await slaUpdateFor(complaint, { priority }));
     history.push({
-      changedBy: actor._id,
+      changedBy: actorId,
       type: 'priority',
       oldStatus: newStatus,
       newStatus,

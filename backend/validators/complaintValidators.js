@@ -10,6 +10,7 @@ const category = () => body('category').isMongoId().withMessage('Please choose a
 const building = () =>
   body('building')
     .if(body('place').not().exists({ values: 'falsy' }))
+    .if(body('asset').not().exists({ values: 'falsy' }))
     .trim()
     .isLength({ min: 1, max: 80 })
     .withMessage('Building is required (max 80 characters)');
@@ -20,7 +21,24 @@ const priority = () =>
 const note = (field = 'note', max = 2000) =>
   body(field).optional().isString().trim().isLength({ max }).withMessage(`Note must be at most ${max} characters`);
 
-exports.create = [title(), description(), category(), building(), room(), place(), priority()];
+const asset = () => body('asset').optional({ values: 'falsy' }).isMongoId().withMessage('Invalid asset');
+
+exports.create = [title(), description(), category(), building(), room(), place(), asset(), priority()];
+
+exports.useParts = [
+  body('part').isMongoId().withMessage('Please choose a part'),
+  body('quantity').isInt({ min: 1, max: 1000 }).withMessage('Quantity must be 1–1000').toInt(),
+];
+
+exports.workOrder = [
+  body('description').isString().trim().isLength({ min: 5, max: 1000 }).withMessage('Describe the work (5–1000 characters)'),
+  body('estimatedCost').isFloat({ min: 0, max: 100000000 }).withMessage('Enter the estimated cost in BDT').toFloat(),
+];
+
+exports.decision = [
+  body('decision').isIn(['approved', 'rejected']).withMessage('Decision must be approved or rejected'),
+  body('note').optional().isString().trim().isLength({ max: 500 }),
+];
 
 // Owners may only edit descriptive fields; status/assignment are rejected outright.
 exports.update = [

@@ -29,6 +29,13 @@ const userSchema = new mongoose.Schema(
       chatMessages: { type: Boolean, default: false },
       dailyDigest: { type: Boolean, default: true },
     },
+    // Maintenance staff profile used by smart auto-assignment.
+    staffProfile: {
+      skills: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
+      zones: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Location' }], // buildings they usually cover
+      maxOpenTasks: { type: Number, default: 6, min: 1, max: 50 },
+      leaves: [{ from: Date, to: Date, reason: { type: String, maxlength: 120 } }],
+    },
     failedLogins: { type: Number, default: 0 },
     lockUntil: Date,
   },

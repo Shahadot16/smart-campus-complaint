@@ -1,12 +1,13 @@
 const config = require('../config/env');
 const { withTransaction } = require('../config/db');
-const { Complaint, Category, ComplaintStatusHistory, Attachment, Feedback, User } = require('../models');
+const { Complaint, Category, ComplaintStatusHistory, Attachment, Feedback, User, Asset, Department } = require('../models');
+const { bestStaff } = require('../utils/assignment');
 const ApiError = require('../utils/ApiError');
 const notify = require('../utils/notify');
 const realtime = require('../utils/realtime');
 const { sendSuccess } = require('../utils/response');
 const { verifyImages, saveImages, filePath } = require('../utils/fileStorage');
-const { generateTrackingCode, changeStatus, addNote } = require('../utils/complaintService');
+const { generateTrackingCode, changeStatus, addNote, assignStaff } = require('../utils/complaintService');
 const { listComplaints, statusCounts } = require('../utils/complaintQuery');
 const { allowedNextStatuses, STATUS_LABELS } = require('../utils/workflow');
 const { computeDueDates, slaUpdateFor } = require('../utils/sla');
@@ -48,16 +49,29 @@ function permissionsFor(user, complaint, hasFeedback) {
     canFeedback: owner && ['resolved', 'closed'].includes(status) && !hasFeedback,
     canClose: owner && status === 'resolved',
     canRequestReopen: owner && ['resolved', 'closed'].includes(status) && !complaint.reopenRequest?.requested,
+    canUseParts: (admin || staff) && ['assigned', 'in_progress'].includes(status),
+    canRaiseWorkOrder: (admin || staff) && !['resolved', 'closed', 'rejected'].includes(status),
+    canApproveWorkOrders: admin || user.role === 'dept_head',
+    canSuggestStaff: admin && ['submitted', 'under_review', 'assigned', 'in_progress'].includes(status),
   };
 }
 
 // POST /api/complaints  (multipart: fields + optional `images`)
 exports.create = async (req, res) => {
   const { title, description, category, priority = 'medium' } = req.body;
-  await getActiveCategory(category);
+  const categoryDoc = await getActiveCategory(category);
   verifyImages(req.files); // reject bad files before anything is written
+
+  // An asset (picked or scanned) brings its own location.
+  let asset = null;
+  if (req.body.asset) {
+    asset = await Asset.findOne({ _id: req.body.asset, status: { $ne: 'retired' } });
+    if (!asset) throw ApiError.badRequest('The selected asset no longer exists');
+  }
   // A picked or scanned location fills in the building/room names.
-  const location = await resolvePlace(req.body);
+  const { department: placeDepartment, ...location } = await resolvePlace({ ...req.body, place: req.body.place || asset?.location });
+  // Responsible department: the location's, else the student's own (if it is an engineering department).
+  const department = placeDepartment || asset?.department || ((await Department.exists({ code: req.user.department })) ? req.user.department : '');
   const createdAt = new Date();
   const due = await computeDueDates(createdAt, priority, category);
 
@@ -72,6 +86,8 @@ exports.create = async (req, res) => {
           title,
           description,
           location,
+          department,
+          asset: asset?._id || null,
           priority,
           status: 'submitted',
           sla: due,
@@ -89,6 +105,20 @@ exports.create = async (req, res) => {
 
   const attachments = await saveImages(req.files, { complaintId: complaint._id, userId: req.user._id });
 
+  // Categories with auto-assignment go straight to the best-matching staff member.
+  let autoAssigned = null;
+  if (categoryDoc.autoAssign) {
+    try {
+      const best = await bestStaff(complaint);
+      if (best) {
+        await assignStaff({ complaint, actor: null, staffId: best.id });
+        autoAssigned = best.name;
+      }
+    } catch (err) {
+      console.error('Auto-assignment failed:', err.message);
+    }
+  }
+
   realtime.toRole('admin', 'complaint:new', { id: String(complaint._id), trackingCode: complaint.trackingCode });
   await notifyAdmins({
     title: `New complaint ${complaint.trackingCode}`,
@@ -102,8 +132,9 @@ exports.create = async (req, res) => {
     data: {
       id: complaint._id,
       trackingCode: complaint.trackingCode,
-      status: complaint.status,
+      status: autoAssigned ? 'assigned' : complaint.status,
       attachments: attachments.length,
+      autoAssigned,
     },
   });
 };
@@ -144,6 +175,7 @@ exports.getById = async (req, res) => {
   const studentFields = req.user.role === 'admin' ? 'name email studentId department phone' : 'name department';
   await complaint.populate([
     { path: 'category', select: 'name isActive' },
+    { path: 'asset', select: 'code name type status warrantyUntil' },
     { path: 'student', select: studentFields },
     { path: 'assignedStaff', select: isStudent ? 'name department' : 'name email department phone' },
   ]);

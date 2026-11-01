@@ -46,7 +46,7 @@ function initSockets(httpServer) {
     // Viewing a complaint: join its room after an access check.
     socket.on('complaint:join', async (complaintId, ack) => {
       try {
-        const complaint = await Complaint.findById(complaintId).select('student assignedStaff');
+        const complaint = await Complaint.findById(complaintId).select('student assignedStaff department');
         if (!complaint || !canAccessComplaint(user, complaint)) throw new Error('Not allowed');
         socket.join(`complaint:${complaintId}`);
         ack?.({ ok: true });

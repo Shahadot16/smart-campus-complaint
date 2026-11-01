@@ -2,6 +2,7 @@ const { Complaint, Category, User, Feedback, AuditLog } = require('../models');
 const audit = require('../utils/audit');
 const realtime = require('../utils/realtime');
 const { slaUpdateFor } = require('../utils/sla');
+const { rankStaff } = require('../utils/assignment');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess, getPagination, buildMeta, escapeRegex } = require('../utils/response');
 const { changeStatus, assignStaff, commitChange } = require('../utils/complaintService');
@@ -114,7 +115,14 @@ exports.listStaff = async (_req, res) => {
   ]);
   const byId = Object.fromEntries(load.map((l) => [String(l._id), l.open]));
   sendSuccess(res, {
-    data: staff.map((s) => ({ id: s._id, name: s.name, email: s.email, department: s.department, openTasks: byId[String(s._id)] || 0 })),
+    data: staff.map((s) => ({
+      id: s._id,
+      name: s.name,
+      email: s.email,
+      department: s.department,
+      openTasks: byId[String(s._id)] || 0,
+      staffProfile: s.staffProfile || { skills: [], zones: [], maxOpenTasks: 6, leaves: [] },
+    })),
   });
 };
 
@@ -126,7 +134,8 @@ exports.createUser = async (req, res) => {
   await user.setPassword(password);
   await user.save();
   await audit(req, { action: 'user.create', entity: 'User', entityId: user._id, summary: `Created ${role} account ${email}` });
-  sendSuccess(res, { status: 201, message: `${role === 'admin' ? 'Admin' : 'Staff'} account created`, data: profile(user) });
+  const label = { admin: 'Admin', staff: 'Staff', dept_head: 'Department head' }[role];
+  sendSuccess(res, { status: 201, message: `${label} account created`, data: profile(user) });
 };
 
 // PATCH /api/admin/users/:id — activate/deactivate, change role or details
@@ -191,7 +200,7 @@ exports.updateCategory = async (req, res) => {
     });
     if (clash) throw ApiError.conflict('A category with this name already exists');
   }
-  for (const field of ['name', 'description', 'isActive']) {
+  for (const field of ['name', 'description', 'isActive', 'autoAssign']) {
     if (req.body[field] !== undefined) category[field] = req.body[field];
   }
   await category.save();
@@ -297,4 +306,29 @@ exports.auditLogs = async (req, res) => {
 // GET /api/admin/online — ids of users with an open live connection
 exports.online = async (_req, res) => {
   sendSuccess(res, { data: realtime.onlineUserIds() });
+};
+
+/* ------------------------- Smart assignment ------------------------- */
+
+// GET /api/admin/complaints/:id/suggest-staff — ranked candidates with score breakdown
+exports.suggestStaff = async (req, res) => {
+  const complaint = await loadAccessibleComplaint(req.params.id, req.user);
+  sendSuccess(res, { data: await rankStaff(complaint) });
+};
+
+// PUT /api/admin/staff/:id/profile — skills, zones, capacity and leave
+exports.updateStaffProfile = async (req, res) => {
+  assertObjectId(req.params.id, 'user id');
+  const user = await User.findOne({ _id: req.params.id, role: 'staff' });
+  if (!user) throw ApiError.notFound('Staff member not found');
+  const { skills = [], zones = [], maxOpenTasks = 6, leaves = [] } = req.body;
+  user.staffProfile = {
+    skills,
+    zones,
+    maxOpenTasks,
+    leaves: leaves.filter((l) => l.from && l.to).map((l) => ({ from: new Date(l.from), to: new Date(l.to), reason: l.reason || '' })),
+  };
+  await user.save();
+  await audit(req, { action: 'staff.profile', entity: 'User', entityId: user._id, summary: `Updated work profile of ${user.name}` });
+  sendSuccess(res, { message: 'Staff profile saved', data: user.staffProfile });
 };

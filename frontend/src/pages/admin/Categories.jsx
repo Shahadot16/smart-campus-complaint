@@ -62,6 +62,19 @@ export default function AdminCategories() {
   const [editing, setEditing] = useState(null)
   const [busyId, setBusyId] = useState(null)
 
+  async function toggleAuto(c) {
+    setBusyId(c._id)
+    try {
+      await adminApi.updateCategory(c._id, { autoAssign: !c.autoAssign })
+      toast.success(c.autoAssign ? `Auto-assignment off for "${c.name}"` : `"${c.name}" complaints will be assigned automatically`)
+      reload()
+    } catch (err) {
+      toast.error(errorMessage(err))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   async function toggle(c) {
     setBusyId(c._id)
     try {
@@ -105,9 +118,17 @@ export default function AdminCategories() {
                 </span>
               </div>
               <p className="mt-2 flex-1 text-sm text-ink-soft">{c.description || <span className="italic text-ink-muted">No description</span>}</p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button className="btn-secondary btn-sm" onClick={() => setEditing(c)}>
                   <Pencil className="size-3.5" /> Edit
+                </button>
+                <button
+                  className={`btn btn-sm ${c.autoAssign ? 'bg-brand-50 text-brand-700' : 'text-ink-soft hover:bg-slate-100'}`}
+                  onClick={() => toggleAuto(c)}
+                  disabled={busyId === c._id}
+                  title="Assign new complaints in this category to the best-matching staff automatically"
+                >
+                  {c.autoAssign ? 'Auto-assign: on' : 'Auto-assign: off'}
                 </button>
                 <button className="btn-ghost btn-sm" onClick={() => toggle(c)} disabled={busyId === c._id}>
                   {busyId === c._id && <Spinner className="size-3" />}

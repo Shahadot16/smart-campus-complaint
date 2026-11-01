@@ -8,6 +8,7 @@ const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/response');
 const { randomToken, hashToken } = require('../utils/tokens');
 const { sendMail, button, isRealMail } = require('../utils/mailer');
+const { ROLE_PERMISSIONS } = require('../utils/permissions');
 
 const DAY = 24 * 60 * 60 * 1000;
 const EMAIL_PREFS = ['statusUpdates', 'assignments', 'slaAlerts', 'chatMessages', 'dailyDigest'];
@@ -76,6 +77,7 @@ function profile(user) {
     emailVerified: Boolean(user.emailVerified),
     twoFactorEnabled: Boolean(user.twoFactor?.enabled),
     emailPrefs: user.emailPrefs?.toObject ? user.emailPrefs.toObject() : user.emailPrefs || {},
+    permissions: ROLE_PERMISSIONS[user.role] || [],
     createdAt: user.createdAt,
     lastLoginAt: user.lastLoginAt,
   };

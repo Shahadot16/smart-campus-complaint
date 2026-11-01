@@ -6,6 +6,8 @@ const { uploadImages } = require('../middleware/upload');
 const v = require('../validators/complaintValidators');
 const ctrl = require('../controllers/complaintController');
 const chat = require('../controllers/chatController');
+const inventory = require('../controllers/inventoryController');
+const workOrders = require('../controllers/workOrderController');
 const { body } = require('express-validator');
 
 const router = express.Router();
@@ -23,6 +25,10 @@ router.get('/:id', ctrl.getById);
 router.patch('/:id', student, validate(v.update), ctrl.update);
 router.post('/:id/attachments', uploadImages, ctrl.uploadAttachments);
 router.post('/:id/notes', validate(v.addNote), ctrl.addNote);
+router.get('/:id/parts', inventory.usedOnComplaint);
+router.post('/:id/parts', validate(v.useParts), inventory.useOnComplaint);
+router.get('/:id/work-orders', workOrders.forComplaint);
+router.post('/:id/work-orders', validate(v.workOrder), workOrders.create);
 router.get('/:id/messages', chat.list);
 router.post(
   '/:id/messages',

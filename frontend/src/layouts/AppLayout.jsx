@@ -1,5 +1,11 @@
 import {
   BarChart3,
+  Boxes,
+  Briefcase,
+  KeyRound,
+  Package,
+  Receipt,
+  UserCog,
   Bell,
   ClipboardList,
   FilePlus2,
@@ -39,17 +45,30 @@ const NAV = {
   admin: [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/admin/complaints', label: 'Complaints', icon: FolderKanban },
+    { to: '/approvals', label: 'Approvals', icon: Receipt },
     { to: '/admin/users', label: 'Users', icon: Users },
+    { to: '/admin/staff', label: 'Staff & Skills', icon: UserCog },
+    { to: '/assets', label: 'Assets', icon: Boxes },
+    { to: '/admin/inventory', label: 'Inventory', icon: Package },
     { to: '/admin/categories', label: 'Categories', icon: Tags },
     { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
     { to: '/admin/sla', label: 'SLA & Jobs', icon: Timer },
     { to: '/admin/locations', label: 'Locations & QR', icon: MapPin },
     { to: '/map', label: 'Campus Map', icon: Map },
+    { to: '/admin/roles', label: 'Roles & Permissions', icon: KeyRound },
     { to: '/admin/audit-log', label: 'Audit Log', icon: History },
   ],
   staff: [
     { to: '/staff', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/staff/tasks', label: 'My Tasks', icon: ListChecks },
+    { to: '/assets', label: 'Assets', icon: Boxes },
+    { to: '/map', label: 'Campus Map', icon: Map },
+  ],
+  dept_head: [
+    { to: '/dept', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/dept/complaints', label: 'Department Complaints', icon: FolderKanban },
+    { to: '/approvals', label: 'Approvals', icon: Receipt },
+    { to: '/assets', label: 'Assets', icon: Boxes },
     { to: '/map', label: 'Campus Map', icon: Map },
   ],
 }
@@ -169,7 +188,7 @@ export default function AppLayout() {
   }
 
   const items = NAV[user.role] || []
-  const RoleIcon = user.role === 'staff' ? Wrench : user.role === 'admin' ? ShieldCheck : GraduationCap
+  const RoleIcon = { staff: Wrench, admin: ShieldCheck, dept_head: Briefcase }[user.role] || GraduationCap
 
   const sidebar = (
     <div className="relative flex h-full flex-col bg-navy-900 px-3 py-5">
@@ -185,7 +204,7 @@ export default function AppLayout() {
           Smart Campus · {ROLE_LABELS[user.role]}
         </span>
       </Link>
-      <nav className="flex-1 space-y-1" aria-label="Main">
+      <nav className="-mr-1 flex-1 space-y-1 overflow-y-auto pr-1" aria-label="Main">
         {items.map((item) => (
           <NavItem key={item.to} item={item} />
         ))}
