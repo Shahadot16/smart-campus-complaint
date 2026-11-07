@@ -34,7 +34,7 @@ export default function AdminDashboard() {
     <div className="animate-fade-in space-y-6">
       <PageHeader title="Admin dashboard" subtitle="Campus-wide complaint overview." />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total complaints" value={counts.total} icon={ClipboardList} tone="sky" />
         <StatCard label="Pending review" value={counts.pending} icon={Clock} tone="amber" />
         <StatCard label="In progress" value={counts.inProgress} icon={Wrench} tone="blue" />
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
       {(data.unassignedNew > 0 || data.reopen > 0) && (
         <div className="grid gap-3 sm:grid-cols-2">
           {data.unassignedNew > 0 && (
-            <Link to="/admin/complaints?status=submitted" className="card flex items-center gap-3 border-amber-200 bg-amber-50 p-4 hover:bg-amber-100/60">
+            <Link to="/admin/complaints?status=submitted" className="card hover-lift flex items-center gap-3 border-amber-200 bg-amber-50 p-4 hover:bg-amber-100/60">
               <AlertTriangle className="size-5 text-amber-600" aria-hidden="true" />
               <span className="text-sm text-amber-900">
                 <strong>{data.unassignedNew}</strong> new complaint{data.unassignedNew > 1 ? 's' : ''} waiting for review
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
             </Link>
           )}
           {data.reopen > 0 && (
-            <Link to="/admin/complaints?reopenRequested=true" className="card flex items-center gap-3 border-violet-200 bg-violet-50 p-4 hover:bg-violet-100/60">
+            <Link to="/admin/complaints?reopenRequested=true" className="card hover-lift flex items-center gap-3 border-violet-200 bg-violet-50 p-4 hover:bg-violet-100/60">
               <RotateCcw className="size-5 text-violet-600" aria-hidden="true" />
               <span className="text-sm text-violet-900">
                 <strong>{data.reopen}</strong> reopen request{data.reopen > 1 ? 's' : ''} pending
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
                       <span className="font-medium text-ink-soft tabular-nums">{c.count}</span>
                     </div>
                     <div className="mt-1 h-2 rounded-full bg-slate-100">
-                      <div className="h-2 rounded-full bg-brand-500" style={{ width: `${(c.count / maxCat) * 100}%` }} />
+                      <div className="bar-grow h-2 rounded-full bg-brand-500" style={{ width: `${(c.count / maxCat) * 100}%` }} />
                     </div>
                   </li>
                 ))}

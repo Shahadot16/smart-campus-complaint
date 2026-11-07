@@ -172,16 +172,10 @@ async function seed() {
   );
 
   // [student, category, title, description, building, room, priority, final status, staff, days ago]
+  // Minimal demo: two complaints so you can add more and test the flows yourself.
   const samples = [
     [student, 'Network & IT', 'Lab Wi-Fi is not working', 'Several computers in the CSE software lab cannot connect to the internet since Monday morning.', 'Engineering Building', 'CSE Lab 3', 'high', 'in_progress', staff1, 3, 'AST-RTR-L3'],
-    [student, 'Electrical', 'Broken classroom fan', 'The ceiling fan near the window makes a loud noise and stops frequently during class.', 'Main Academic Building', 'Room 405', 'medium', 'assigned', staff1, 2, 'AST-FAN-405'],
-    [student, 'Cleaning', 'Washroom needs cleaning', 'The third floor washroom has not been cleaned for two days and has no soap.', 'Engineering Building', '3rd floor washroom', 'low', 'closed', staff2, 12],
     [student, 'Lab Equipment', 'Oscilloscope not powering on', 'Bench 4 oscilloscope in the electronics lab does not turn on, lab work is blocked.', 'Engineering Building', 'EEE Electronics Lab', 'high', 'submitted', null, 0, 'AST-OSC-04'],
-    [student, 'Plumbing', 'Water leakage in corridor', 'Water is leaking from the ceiling near the stairs, the floor is slippery.', 'Central Library', 'Ground floor', 'critical', 'resolved', staff2, 6],
-    [student2, 'Furniture', 'Broken chairs in classroom', 'Five chairs in the back row are broken and unsafe to sit on.', 'Main Academic Building', 'Room 210', 'medium', 'under_review', null, 1],
-    [student2, 'Safety & Security', 'Workshop door lock damaged', 'The mechanical workshop door does not lock properly after classes.', 'Engineering Workshop', 'ME Workshop', 'high', 'needs_information', null, 4],
-    [student2, 'AC & Ventilation', 'AC not cooling in seminar room', 'The air conditioner runs but blows warm air; the room gets very hot during seminars.', 'Main Academic Building', 'Seminar Hall', 'medium', 'rejected', null, 9, 'AST-AC-SEM'],
-    [student2, 'Electrical', 'Lights flickering in library', 'Tube lights on the reading floor flicker constantly, making it hard to study.', 'Central Library', '1st floor', 'medium', 'closed', staff1, 20],
   ];
 
   const paths = {

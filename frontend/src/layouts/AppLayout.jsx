@@ -92,17 +92,33 @@ function NavItem({ item, badge }) {
       to={item.to}
       end={item.end}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-          isActive ? 'bg-white/12 text-white' : 'text-brand-100/80 hover:bg-white/6 hover:text-white'
+        `group relative flex items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+          isActive
+            ? 'bg-gradient-to-r from-emerald-500/30 to-emerald-500/5 text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08)]'
+            : 'text-slate-300/80 hover:translate-x-1 hover:bg-emerald-500/15 hover:text-white'
         }`
       }
     >
-      <Icon className="size-[18px]" aria-hidden="true" />
-      <span className="flex-1">{t(item.label)}</span>
-      {badge > 0 && (
-        <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] leading-none font-bold text-navy-950">
-          {badge > 99 ? '99+' : badge}
-        </span>
+      {({ isActive }) => (
+        <>
+          {/* sliding indicator on the active item */}
+          <span
+            className={`absolute top-1/2 left-0 h-5 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-emerald-400 to-brand-500 transition-all duration-300 ${isActive ? 'w-1 opacity-100 shadow-[0_0_10px_rgb(16_185_129_/_0.8)]' : 'w-0 opacity-0'}`}
+            aria-hidden="true"
+          />
+          {/* shine sweep on hover */}
+          <span className="sheen" aria-hidden="true" />
+          <Icon
+            className={`relative size-[18px] transition-all duration-200 group-hover:scale-110 ${isActive ? 'text-emerald-300' : 'group-hover:text-emerald-300'}`}
+            aria-hidden="true"
+          />
+          <span className="relative flex-1">{t(item.label)}</span>
+          {badge > 0 && (
+            <span className="animate-pop-in relative rounded-full bg-gradient-to-br from-emerald-400 to-brand-500 px-1.5 py-0.5 text-[10px] leading-none font-bold text-white shadow-[0_0_10px_rgb(16_185_129_/_0.6)]">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
+        </>
       )}
     </NavLink>
   )
@@ -199,20 +215,19 @@ export default function AppLayout() {
   const RoleIcon = { staff: Wrench, admin: ShieldCheck, dept_head: Briefcase }[user.role] || GraduationCap
 
   const sidebar = (
-    <div className="relative flex h-full flex-col bg-navy-900 px-3 py-5">
-      <div className="absolute top-0 left-0 flex h-1 w-full" aria-hidden="true">
-        <span className="flex-1 bg-emerald-500" />
-        <span className="flex-1 bg-accent-gold" />
-        <span className="flex-1 bg-accent-red" />
-      </div>
-      <Link to="/" className="mb-8 block px-2">
+    <div className="relative flex h-full flex-col overflow-hidden bg-[linear-gradient(168deg,#0b1120_0%,#111a2e_52%,#1b2540_100%)] px-3 py-5">
+      {/* soft drifting glow for depth */}
+      <div className="animate-glow-pulse pointer-events-none absolute -top-16 -right-12 size-52 rounded-full bg-emerald-500/25 blur-3xl" aria-hidden="true" />
+      <div className="animate-aurora pointer-events-none absolute bottom-24 -left-16 size-48 rounded-full bg-brand-500/15 blur-3xl" aria-hidden="true" />
+      <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-brand-400 to-emerald-500" aria-hidden="true" />
+      <Link to="/" className="animate-fade-in-down relative mb-8 block px-2 transition-transform duration-200 hover:scale-[1.02]">
         <img src="/brand/iubat-logo-name.png" alt="IUBAT" className="h-8 w-auto" />
-        <span className="mt-3 flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-brand-200 uppercase">
+        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300 uppercase ring-1 ring-white/10">
           <RoleIcon className="size-3.5" aria-hidden="true" />
           Smart Campus · {ROLE_LABELS[user.role]}
         </span>
       </Link>
-      <nav className="-mr-1 flex-1 space-y-1 overflow-y-auto pr-1" aria-label="Main">
+      <nav className="stagger relative -mr-1 flex-1 space-y-1 overflow-y-auto pr-1" aria-label="Main">
         {items.map((item) => (
           <NavItem key={item.to} item={item} />
         ))}
@@ -221,18 +236,26 @@ export default function AppLayout() {
           <NavItem key={item.to} item={item} badge={item.to === '/notifications' ? unread : 0} />
         ))}
       </nav>
-      <div className="mt-4 flex items-center gap-2 px-3 text-[11px] text-brand-200/80" title={connected ? 'Live updates on' : 'Reconnecting…'}>
-        <span className={`size-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-slate-400'}`} aria-hidden="true" />
+      <div className="relative mt-4 flex items-center gap-2 px-3 text-[11px] text-brand-200/80" title={connected ? 'Live updates on' : 'Reconnecting…'}>
+        <span className="relative flex size-2" aria-hidden="true">
+          {connected && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
+          <span className={`relative inline-flex size-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-slate-400'}`} />
+        </span>
         <span className="flex-1">{connected ? t('Live updates on') : t('Connecting…')}</span>
         <LanguageSwitch className="text-brand-100 ring-white/20" />
       </div>
-      <div className="mt-2 flex items-center gap-3 rounded-lg bg-white/6 p-3">
-        <Avatar name={user.name} className="size-9 text-sm" />
+      <div className="relative mt-2 flex items-center gap-3 rounded-xl bg-white/6 p-3 ring-1 ring-white/5 transition-colors hover:bg-white/10">
+        <Avatar name={user.name} className="size-9 text-sm ring-2 ring-emerald-400/50" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{user.name}</p>
           <p className="truncate text-xs text-brand-200">{user.email}</p>
         </div>
-        <button onClick={handleLogout} className="rounded-md p-1.5 text-brand-100 hover:bg-white/10 hover:text-white" aria-label="Sign out" title="Sign out">
+        <button
+          onClick={handleLogout}
+          className="rounded-md p-1.5 text-brand-100 transition-all hover:translate-x-0.5 hover:bg-white/10 hover:text-white"
+          aria-label="Sign out"
+          title="Sign out"
+        >
           <LogOut className="size-4" />
         </button>
       </div>
@@ -268,7 +291,9 @@ export default function AppLayout() {
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         {!user.emailVerified && <VerifyEmailBanner email={user.email} />}
-        <Outlet context={{ refreshUnread }} />
+        <div key={location.pathname} className="animate-fade-in-up">
+          <Outlet context={{ refreshUnread }} />
+        </div>
       </main>
       <ChatbotWidget />
     </div>

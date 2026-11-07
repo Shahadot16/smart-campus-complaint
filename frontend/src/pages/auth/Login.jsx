@@ -22,7 +22,7 @@ function RoleCard({ role, selected, onSelect }) {
       }`}
     >
       {selected && (
-        <span className={`absolute top-2 right-2 grid size-5 place-items-center rounded-full ${role.iconBox}`}>
+        <span className={`animate-pop-in absolute top-2 right-2 grid size-5 place-items-center rounded-full ${role.iconBox}`}>
           <Check className="size-3" strokeWidth={3} aria-hidden="true" />
         </span>
       )}
@@ -111,7 +111,7 @@ export default function Login() {
         <button className="btn-ghost btn-sm -ml-2 mb-4" onClick={() => setChallenge(null)}>
           <ArrowLeft className="size-4" /> Back
         </button>
-        <span className="grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+        <span className="animate-pop-in grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
           <KeyRound className="size-7" aria-hidden="true" />
         </span>
         <h1 className="mt-4 text-2xl font-bold text-navy-900">Two-step verification</h1>
@@ -137,10 +137,12 @@ export default function Login() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-3xl font-bold tracking-tight text-navy-900">{t('Welcome back')}</h1>
-      <p className="mt-1.5 text-sm text-ink-soft">{t('Choose your role, then sign in with your IUBAT account.')}</p>
+      <div className="animate-fade-in-up text-center [animation-delay:0.18s]">
+        <h1 className="text-gradient-brand text-3xl font-bold tracking-tight">{t('Welcome back')}</h1>
+        <p className="mt-1.5 text-sm text-ink-soft">{t('Choose your role, then sign in with your IUBAT account.')}</p>
+      </div>
 
-      <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Sign in as">
+      <div className="stagger mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Sign in as">
         {LOGIN_ROLES.map((r) => (
           <RoleCard
             key={r.key}
@@ -154,7 +156,7 @@ export default function Login() {
         ))}
       </div>
 
-      <form onSubmit={onSubmit} className="card mt-6 space-y-4 p-5 sm:p-6" noValidate>
+      <form onSubmit={onSubmit} className="card animate-fade-in-up mt-6 space-y-4 p-5 shadow-pop ring-1 ring-black/5 sm:p-6" noValidate>
         <div className="flex items-center gap-2">
           <span className={`grid size-7 place-items-center rounded-lg ${role.iconBox}`}>
             <role.icon className="size-4" aria-hidden="true" />
@@ -205,10 +207,11 @@ export default function Login() {
           </div>
         </Field>
 
-        <button type="submit" className={`btn w-full py-2.5 text-white ${role.button}`} disabled={submitting}>
+        <button type="submit" className={`btn group relative w-full overflow-hidden py-2.5 text-white shadow-sm ${role.button}`} disabled={submitting}>
+          <span className="sheen" aria-hidden="true" />
           {submitting ? <Spinner className="size-4 text-white" /> : null}
           {t('Sign in as {role}', { role: t(role.title) })}
-          {!submitting && <ArrowRight className="size-4" />}
+          {!submitting && <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />}
         </button>
 
         <button

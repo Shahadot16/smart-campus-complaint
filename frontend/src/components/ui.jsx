@@ -1,15 +1,25 @@
 import { AlertCircle, ChevronLeft, ChevronRight, Inbox, Loader2, X } from 'lucide-react'
 import { useEffect } from 'react'
+import useCountUp from '../hooks/useCountUp'
 import { PRIORITIES, STATUSES } from '../utils/constants'
 
 export function Spinner({ className = 'size-5' }) {
   return <Loader2 className={`animate-spin text-brand-600 ${className}`} aria-hidden="true" />
 }
 
+/** Counts up from 0 to a numeric value on mount; renders anything else as-is. */
+export function AnimatedNumber({ value, className }) {
+  const n = useCountUp(value)
+  return <span className={className}>{n}</span>
+}
+
 export function PageLoader({ label = 'Loading…' }) {
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-ink-soft" role="status">
-      <Spinner className="size-7" />
+    <div className="animate-fade-in flex min-h-[40vh] flex-col items-center justify-center gap-4 text-ink-soft" role="status">
+      <div className="relative grid place-items-center">
+        <span className="animate-glow-pulse absolute size-12 rounded-full bg-brand-400/40 blur-xl" aria-hidden="true" />
+        <Spinner className="relative size-8" />
+      </div>
       <span className="text-sm">{label}</span>
     </div>
   )
@@ -40,12 +50,39 @@ export function PriorityBadge({ priority }) {
   )
 }
 
+export function HeroBanner({ title, subtitle, actions, icon: Icon }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#1e1b4b_0%,#312e81_46%,#4f46e5_100%)] p-6 text-white shadow-pop sm:p-8">
+      {/* drifting glow + faint grid for depth */}
+      <div className="animate-glow-pulse pointer-events-none absolute -top-20 -right-10 size-64 rounded-full bg-indigo-400/30 blur-3xl" aria-hidden="true" />
+      <div className="animate-aurora pointer-events-none absolute -bottom-24 left-1/3 size-56 rounded-full bg-sky-400/20 blur-3xl [animation-delay:-9s]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(white_1px,transparent_1px),linear-gradient(90deg,white_1px,transparent_1px)] [background-size:40px_40px]" aria-hidden="true" />
+      <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-indigo-400 via-sky-300 to-indigo-400" aria-hidden="true" />
+
+      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          {Icon && (
+            <span className="animate-float hidden size-14 shrink-0 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm sm:grid">
+              <Icon className="size-7 text-sky-300" aria-hidden="true" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <h1 className="animate-fade-in-up text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+            {subtitle && <p className="animate-fade-in-up mt-1.5 text-sm text-indigo-100/85 [animation-delay:0.08s]">{subtitle}</p>}
+          </div>
+        </div>
+        {actions && <div className="animate-fade-in-up relative flex flex-wrap gap-2 [animation-delay:0.16s]">{actions}</div>}
+      </div>
+    </div>
+  )
+}
+
 export function PageHeader({ title, subtitle, actions, back }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {back}
-        <h1 className="text-2xl font-bold tracking-tight text-navy-900">{title}</h1>
+        <h1 className="text-gradient-brand text-2xl font-bold tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-ink-soft">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -54,43 +91,47 @@ export function PageHeader({ title, subtitle, actions, back }) {
 }
 
 const STAT_TONES = {
-  sky: 'bg-sky-50 border-sky-100',
-  amber: 'bg-amber-50 border-amber-100',
-  blue: 'bg-blue-50 border-blue-100',
-  green: 'bg-emerald-50 border-emerald-100',
-  violet: 'bg-violet-50 border-violet-100',
-  red: 'bg-red-50 border-red-100',
-}
-const ICON_TONES = {
-  sky: 'bg-sky-100 text-sky-700',
-  amber: 'bg-amber-100 text-amber-700',
-  blue: 'bg-blue-100 text-blue-700',
-  green: 'bg-emerald-100 text-emerald-700',
-  violet: 'bg-violet-100 text-violet-700',
-  red: 'bg-red-100 text-red-700',
+  sky: { bar: 'from-sky-400 to-sky-600', chip: 'from-sky-500 to-sky-600', soft: 'bg-sky-500/10' },
+  amber: { bar: 'from-amber-400 to-amber-600', chip: 'from-amber-500 to-amber-600', soft: 'bg-amber-500/10' },
+  blue: { bar: 'from-blue-400 to-blue-600', chip: 'from-blue-500 to-blue-600', soft: 'bg-blue-500/10' },
+  green: { bar: 'from-emerald-400 to-emerald-600', chip: 'from-emerald-500 to-emerald-600', soft: 'bg-emerald-500/10' },
+  violet: { bar: 'from-violet-400 to-violet-600', chip: 'from-violet-500 to-violet-600', soft: 'bg-violet-500/10' },
+  red: { bar: 'from-red-400 to-red-600', chip: 'from-red-500 to-red-600', soft: 'bg-red-500/10' },
 }
 
 export function StatCard({ label, value, icon: Icon, tone = 'sky', hint }) {
+  const t = STAT_TONES[tone] || STAT_TONES.sky
   return (
-    <div className={`rounded-xl border p-5 ${STAT_TONES[tone]}`}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-ink-soft">{label}</p>
+    <div className="group relative overflow-hidden rounded-2xl border border-line bg-white p-5 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-pop">
+      {/* top accent bar grows on hover */}
+      <span className={`absolute inset-x-0 top-0 h-1 origin-left scale-x-100 bg-gradient-to-r transition-transform duration-300 ${t.bar}`} aria-hidden="true" />
+      {/* faint tinted wash in the corner */}
+      <span className={`pointer-events-none absolute -top-10 -right-10 size-24 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-100 ${t.soft} opacity-60`} aria-hidden="true" />
+      <span className="sheen" aria-hidden="true" />
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-ink-soft">{label}</p>
+          <p className="mt-2 text-[2rem] leading-none font-extrabold tracking-tight text-navy-900 tabular-nums">
+            {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
+          </p>
+        </div>
         {Icon && (
-          <span className={`grid size-9 place-items-center rounded-lg ${ICON_TONES[tone]}`}>
-            <Icon className="size-[18px]" aria-hidden="true" />
+          <span
+            className={`grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 ${t.chip}`}
+          >
+            <Icon className="size-5" aria-hidden="true" />
           </span>
         )}
       </div>
-      <p className="mt-2 text-3xl font-bold tracking-tight text-navy-900 tabular-nums">{value}</p>
-      {hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
+      {hint && <p className="relative mt-2 text-xs text-ink-muted">{hint}</p>}
     </div>
   )
 }
 
 export function EmptyState({ icon: Icon = Inbox, title, message, action }) {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <span className="grid size-14 place-items-center rounded-full bg-brand-50 text-brand-600">
+    <div className="animate-fade-in flex flex-col items-center justify-center px-6 py-14 text-center">
+      <span className="animate-float grid size-14 place-items-center rounded-full bg-brand-50 text-brand-600">
         <Icon className="size-7" aria-hidden="true" />
       </span>
       <h3 className="mt-4 font-semibold text-ink">{title}</h3>
@@ -165,8 +206,8 @@ export function Modal({ open, onClose, title, children, footer, size = 'max-w-lg
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className={`animate-fade-in relative w-full ${size} max-h-[92vh] overflow-y-auto rounded-t-2xl bg-white shadow-pop sm:rounded-2xl`}>
+      <div className="animate-fade-in absolute inset-0 bg-navy-950/40 backdrop-blur-[2px]" onClick={onClose} />
+      <div className={`animate-scale-in relative w-full ${size} max-h-[92vh] overflow-y-auto rounded-t-2xl bg-white shadow-pop sm:rounded-2xl`}>
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <h2 className="font-semibold text-navy-900">{title}</h2>
           <button className="btn-ghost -mr-2 p-1.5" onClick={onClose} aria-label="Close">

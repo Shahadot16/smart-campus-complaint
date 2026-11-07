@@ -1,0 +1,28 @@
+# Render Blueprint — one Docker web service that builds the React app and
+# serves it from the Express API. Pair it with a free MongoDB Atlas M0 cluster.
+#
+# Render → New → Blueprint → pick this repo. Then set MONGO_URI, CLIENT_ORIGIN
+# and APP_URL in the dashboard (see README → Deployment).
+services:
+  - type: web
+    name: iubat-smart-campus
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true          # Render generates a long random secret
+      - key: COOKIE_SAMESITE
+        value: lax                    # frontend is served same-origin as the API
+      - key: SEED_DEMO
+        value: "true"                 # load demo data on first boot; set false afterwards
+      - key: MONGO_URI
+        sync: false                   # set in dashboard: your Atlas connection string
+      - key: CLIENT_ORIGIN
+        sync: false                   # set in dashboard: your https://<app>.onrender.com URL
+      - key: APP_URL
+        sync: false                   # set in dashboard: the same Render URL

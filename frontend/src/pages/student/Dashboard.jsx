@@ -67,13 +67,13 @@ export default function StudentDashboard() {
         title={t('Hello, {name}', { name: user.name.split(' ')[0] })}
         subtitle={t("Here's an overview of your campus complaints.")}
         actions={
-          <Link to="/student/new" className="btn-primary">
-            <FilePlus2 className="size-4" /> {t('New complaint')}
+          <Link to="/student/new" className="btn-primary group">
+            <FilePlus2 className="size-4 transition-transform group-hover:rotate-90" /> {t('New complaint')}
           </Link>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t('Total complaints')} value={c.total} icon={ClipboardList} tone="sky" />
         <StatCard label={t('Pending review')} value={c.pending} icon={Clock} tone="amber" hint="Submitted, under review or needs info" />
         <StatCard label={t('In progress')} value={c.inProgress} icon={Wrench} tone="blue" hint="Assigned or being worked on" />

@@ -21,7 +21,7 @@ export default function StaffDashboard() {
     <div className="animate-fade-in space-y-6">
       <PageHeader title={`Hello, ${user.name.split(' ')[0]}`} subtitle="Your assigned maintenance work." />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total assigned" value={c.total} icon={ClipboardList} tone="sky" />
         <StatCard label="New assignments" value={c.byStatus.assigned || 0} icon={ListChecks} tone="amber" hint="Not started yet" />
         <StatCard label="In progress" value={c.byStatus.in_progress || 0} icon={Hammer} tone="blue" />

@@ -24,7 +24,7 @@ export default function DeptDashboard() {
       <PageHeader title={`${data.department} department`} subtitle={`Welcome, ${user.name}. Facilities issues in your department's labs and rooms.`} />
 
       {data.waitingForMe > 0 && (
-        <Link to="/approvals" className="card flex items-center gap-3 border-sky-200 bg-sky-50 p-4 hover:bg-sky-100/60">
+        <Link to="/approvals" className="card hover-lift flex items-center gap-3 border-sky-200 bg-sky-50 p-4 hover:bg-sky-100/60">
           <Receipt className="size-5 text-sky-700" aria-hidden="true" />
           <span className="text-sm text-sky-900">
             <strong>{data.waitingForMe}</strong> work order{data.waitingForMe > 1 ? 's' : ''} waiting for your approval
@@ -32,7 +32,7 @@ export default function DeptDashboard() {
         </Link>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total complaints" value={c.total} icon={ClipboardList} tone="sky" />
         <StatCard label="Being worked on" value={c.inProgress} icon={Wrench} tone="blue" />
         <StatCard label="Overdue" value={data.overdue} icon={AlarmClock} tone={data.overdue ? 'red' : 'green'} />
@@ -61,7 +61,7 @@ export default function DeptDashboard() {
                   </span>
                 </div>
                 <div className="mt-1 h-2 rounded-full bg-slate-100">
-                  <div className="h-2 rounded-full bg-sky-500" style={{ width: `${(x.count / max) * 100}%` }} />
+                  <div className="bar-grow h-2 rounded-full bg-sky-500" style={{ width: `${(x.count / max) * 100}%` }} />
                 </div>
               </li>
             ))}
