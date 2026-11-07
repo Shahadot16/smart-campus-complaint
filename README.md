@@ -22,6 +22,12 @@ and administrators see everything — **live**, with deadlines, QR codes, analyt
 
 <br />
 
+### [🔗 **Live demo** → iubat-smart-campus.onrender.com](https://iubat-smart-campus.onrender.com)
+
+_Sign in with a [demo account](#-demo-accounts) · free host, so the first load may take ~50s to wake up._
+
+<br />
+
 [**Quick start**](#-quick-start) · [**Features**](#-what-it-can-do) · [**Architecture**](#-how-it-is-built) · [**Deploy**](#-deployment) · [**Tests**](#-tests)
 
 </div>
