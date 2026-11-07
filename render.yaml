@@ -9,7 +9,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /api
+    healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
