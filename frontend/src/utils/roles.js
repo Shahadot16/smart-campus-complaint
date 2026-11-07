@@ -26,7 +26,6 @@ export const LOGIN_ROLES = [
     iconBox: 'bg-amber-500 text-white',
     idle: 'bg-amber-50 text-amber-700',
     button: 'bg-amber-600 hover:bg-amber-700',
-    demo: { email: 'staff@iubat.edu', password: 'Staff@123' },
   },
   {
     key: 'dept_head',
@@ -37,7 +36,6 @@ export const LOGIN_ROLES = [
     iconBox: 'bg-sky-600 text-white',
     idle: 'bg-sky-50 text-sky-700',
     button: 'bg-sky-600 hover:bg-sky-700',
-    demo: { email: 'cse.head@iubat.edu', password: 'Head@123' },
   },
   {
     key: 'admin',
@@ -48,6 +46,5 @@ export const LOGIN_ROLES = [
     iconBox: 'bg-red-600 text-white',
     idle: 'bg-red-50 text-red-700',
     button: 'bg-red-600 hover:bg-red-700',
-    demo: { email: 'admin@iubat.edu', password: 'Admin@123' },
   },
 ]

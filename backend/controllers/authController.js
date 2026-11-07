@@ -119,7 +119,11 @@ async function sendVerificationEmail(user) {
 /* ------------------------------ Handlers ----------------------------- */
 
 // POST /api/auth/register — public registration always creates a student.
+// Disabled on the live/production demo so strangers cannot create accounts.
 exports.register = async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ success: false, message: 'Public registration is disabled on this demo. Please use a demo account.' });
+  }
   const { name, email, password, studentId, department, phone } = req.body;
 
   const existing = await User.findOne({ $or: [{ email }, { studentId }] }).lean();

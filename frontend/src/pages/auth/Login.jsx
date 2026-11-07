@@ -214,19 +214,21 @@ export default function Login() {
           {!submitting && <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />}
         </button>
 
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-1.5 text-xs font-medium text-ink-soft hover:text-brand-700"
-          onClick={() => {
-            setForm(role.demo)
-            setErrors({})
-          }}
-        >
-          <Sparkles className="size-3.5" aria-hidden="true" /> {t('Fill demo account')} ({t(role.title)})
-        </button>
+        {role.demo && (
+          <button
+            type="button"
+            className="flex w-full items-center justify-center gap-1.5 text-xs font-medium text-ink-soft hover:text-brand-700"
+            onClick={() => {
+              setForm(role.demo)
+              setErrors({})
+            }}
+          >
+            <Sparkles className="size-3.5" aria-hidden="true" /> {t('Fill demo account')} ({t(role.title)})
+          </button>
+        )}
       </form>
 
-      {role.canRegister ? (
+      {role.canRegister && !import.meta.env.PROD ? (
         <p className="mt-6 text-center text-sm text-ink-soft">
           {t('New to IUBAT Smart Campus?')}{' '}
           <Link to="/register" className="font-semibold text-brand-600 hover:underline">

@@ -70,16 +70,18 @@ npm run dev                 # http://localhost:5173  ← open this in the browse
 On first run, demo data (IUBAT buildings, rooms, users and complaints) is created automatically.
 To wipe everything and start fresh: `cd backend && npm run seed -- --reset`
 
-### 🔑 Demo accounts
+### 🔑 Demo account
+
+Try the **live demo** as a student:
 
 | Role | Email | Password |
 |---|---|---|
 | 👩‍🎓 Student | `student@iubat.edu` | `Student@123` |
-| 🔧 Maintenance Staff | `staff@iubat.edu` | `Staff@123` |
-| 🧑‍💼 Department Head (CSE) | `cse.head@iubat.edu` | `Head@123` |
-| 🛡️ Administrator | `admin@iubat.edu` | `Admin@123` |
 
-> On the login page, pick a role card then click **“Fill demo account”**.
+> On the login page, pick the **Student** card then click **“Fill demo account”**.
+> Staff, Department Head and Administrator accounts are private (created by the Facilities Office)
+> so the public demo can't be tampered with. When you run the project locally, the seed script
+> prints all role logins in the console.
 
 ### 🐳 Run with Docker (optional)
 
