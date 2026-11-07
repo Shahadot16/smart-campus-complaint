@@ -45,7 +45,7 @@
     active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100 cursor-pointer whitespace-nowrap;
 }
 @utility btn-primary {
-  @apply btn bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-sm
+  @apply btn bg-linear-to-br from-brand-500 to-brand-600 text-white shadow-sm
     hover:from-brand-600 hover:to-brand-700 hover:shadow-[0_8px_22px_-8px_rgb(21_128_61_/_0.6)]
     active:from-navy-800 active:to-navy-800;
 }

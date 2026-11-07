@@ -57,7 +57,7 @@ export function HeroBanner({ title, subtitle, actions, icon: Icon }) {
       <div className="animate-glow-pulse pointer-events-none absolute -top-20 -right-10 size-64 rounded-full bg-indigo-400/30 blur-3xl" aria-hidden="true" />
       <div className="animate-aurora pointer-events-none absolute -bottom-24 left-1/3 size-56 rounded-full bg-sky-400/20 blur-3xl [animation-delay:-9s]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(white_1px,transparent_1px),linear-gradient(90deg,white_1px,transparent_1px)] [background-size:40px_40px]" aria-hidden="true" />
-      <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-indigo-400 via-sky-300 to-indigo-400" aria-hidden="true" />
+      <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-indigo-400 via-sky-300 to-indigo-400" aria-hidden="true" />
 
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
@@ -104,7 +104,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'sky', hint }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-line bg-white p-5 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-pop">
       {/* top accent bar grows on hover */}
-      <span className={`absolute inset-x-0 top-0 h-1 origin-left scale-x-100 bg-gradient-to-r transition-transform duration-300 ${t.bar}`} aria-hidden="true" />
+      <span className={`absolute inset-x-0 top-0 h-1 origin-left scale-x-100 bg-linear-to-r transition-transform duration-300 ${t.bar}`} aria-hidden="true" />
       {/* faint tinted wash in the corner */}
       <span className={`pointer-events-none absolute -top-10 -right-10 size-24 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-100 ${t.soft} opacity-60`} aria-hidden="true" />
       <span className="sheen" aria-hidden="true" />
@@ -117,7 +117,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'sky', hint }) {
         </div>
         {Icon && (
           <span
-            className={`grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 ${t.chip}`}
+            className={`grid size-11 shrink-0 place-items-center rounded-xl bg-linear-to-br text-white shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 ${t.chip}`}
           >
             <Icon className="size-5" aria-hidden="true" />
           </span>

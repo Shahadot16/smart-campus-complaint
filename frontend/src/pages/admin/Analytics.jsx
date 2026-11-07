@@ -123,7 +123,7 @@ export default function Analytics() {
         )}
       </div>
 
-      <div className="card border-brand-200 bg-gradient-to-r from-brand-50 to-white p-5">
+      <div className="card border-brand-200 bg-linear-to-r from-brand-50 to-white p-5">
         <p className="flex items-center gap-2 text-sm font-semibold text-navy-900">
           <Sparkles className="size-4 text-brand-600" aria-hidden="true" /> Weekly briefing
           {summary.data && <span className="chip bg-white text-[10px] text-ink-muted ring-1 ring-line">{summary.data.source === 'claude' ? 'Claude AI' : 'Auto-generated'}</span>}

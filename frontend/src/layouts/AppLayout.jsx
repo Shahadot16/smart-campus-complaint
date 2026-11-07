@@ -94,7 +94,7 @@ function NavItem({ item, badge }) {
       className={({ isActive }) =>
         `group relative flex items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
           isActive
-            ? 'bg-gradient-to-r from-emerald-500/30 to-emerald-500/5 text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08)]'
+            ? 'bg-linear-to-r from-emerald-500/30 to-emerald-500/5 text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08)]'
             : 'text-slate-300/80 hover:translate-x-1 hover:bg-emerald-500/15 hover:text-white'
         }`
       }
@@ -103,7 +103,7 @@ function NavItem({ item, badge }) {
         <>
           {/* sliding indicator on the active item */}
           <span
-            className={`absolute top-1/2 left-0 h-5 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-emerald-400 to-brand-500 transition-all duration-300 ${isActive ? 'w-1 opacity-100 shadow-[0_0_10px_rgb(16_185_129_/_0.8)]' : 'w-0 opacity-0'}`}
+            className={`absolute top-1/2 left-0 h-5 -translate-y-1/2 rounded-r-full bg-linear-to-b from-emerald-400 to-brand-500 transition-all duration-300 ${isActive ? 'w-1 opacity-100 shadow-[0_0_10px_rgb(16_185_129_/_0.8)]' : 'w-0 opacity-0'}`}
             aria-hidden="true"
           />
           {/* shine sweep on hover */}
@@ -114,7 +114,7 @@ function NavItem({ item, badge }) {
           />
           <span className="relative flex-1">{t(item.label)}</span>
           {badge > 0 && (
-            <span className="animate-pop-in relative rounded-full bg-gradient-to-br from-emerald-400 to-brand-500 px-1.5 py-0.5 text-[10px] leading-none font-bold text-white shadow-[0_0_10px_rgb(16_185_129_/_0.6)]">
+            <span className="animate-pop-in relative rounded-full bg-linear-to-br from-emerald-400 to-brand-500 px-1.5 py-0.5 text-[10px] leading-none font-bold text-white shadow-[0_0_10px_rgb(16_185_129_/_0.6)]">
               {badge > 99 ? '99+' : badge}
             </span>
           )}
@@ -219,7 +219,7 @@ export default function AppLayout() {
       {/* soft drifting glow for depth */}
       <div className="animate-glow-pulse pointer-events-none absolute -top-16 -right-12 size-52 rounded-full bg-emerald-500/25 blur-3xl" aria-hidden="true" />
       <div className="animate-aurora pointer-events-none absolute bottom-24 -left-16 size-48 rounded-full bg-brand-500/15 blur-3xl" aria-hidden="true" />
-      <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-brand-400 to-emerald-500" aria-hidden="true" />
+      <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-emerald-500 via-brand-400 to-emerald-500" aria-hidden="true" />
       <Link to="/" className="animate-fade-in-down relative mb-8 block px-2 transition-transform duration-200 hover:scale-[1.02]">
         <img src="/brand/iubat-logo-name.png" alt="IUBAT" className="h-8 w-auto" />
         <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300 uppercase ring-1 ring-white/10">
