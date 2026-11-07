@@ -42,11 +42,15 @@ _Sign in with a [demo account](#-demo-accounts) · free host, so the first load 
 
 ## 🖼️ Screenshots
 
-> _Add your screenshots here so the repo looks great. Drop images in `docs/` and link them below._
+**Role-based sign-in with IUBAT branding**
 
-| Login | Student dashboard | Admin analytics |
+![Login page](docs/screenshots/login.png)
+
+**A clean dashboard for every role**
+
+| 👩‍🎓 Student | 🛡️ Administrator | 🔧 Maintenance staff |
 |:---:|:---:|:---:|
-| _login.png_ | _dashboard.png_ | _analytics.png_ |
+| ![Student dashboard](docs/screenshots/student-dashboard.png) | ![Admin dashboard](docs/screenshots/admin-dashboard.png) | ![Staff dashboard](docs/screenshots/staff-dashboard.png) |
 
 ---
 
