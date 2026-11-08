@@ -11,6 +11,9 @@ class ApiError extends Error {
   static unauthorized(msg = 'Authentication required') {
     return new ApiError(401, msg);
   }
+  static paymentRequired(msg = 'This action requires a higher subscription plan') {
+    return new ApiError(402, msg);
+  }
   static forbidden(msg = 'You are not allowed to perform this action') {
     return new ApiError(403, msg);
   }

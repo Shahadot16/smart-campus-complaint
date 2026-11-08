@@ -3,7 +3,7 @@ const { PRIORITIES, STATUSES } = require('../utils/constants');
 
 const complaintSchema = new mongoose.Schema(
   {
-    trackingCode: { type: String, required: true, unique: true },
+    trackingCode: { type: String, required: true },
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     title: { type: String, required: true, trim: true, minlength: 5, maxlength: 120 },
@@ -54,6 +54,7 @@ const complaintSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+complaintSchema.index({ tenantId: 1, trackingCode: 1 }, { unique: true });
 complaintSchema.index({ student: 1, createdAt: -1 });
 complaintSchema.index({ status: 1, createdAt: -1 });
 complaintSchema.index({ category: 1 });
@@ -64,4 +65,5 @@ complaintSchema.index({ department: 1, status: 1 });
 complaintSchema.index({ asset: 1, createdAt: -1 });
 complaintSchema.index({ visibility: 1, status: 1, votes: -1 });
 
+complaintSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('Complaint', complaintSchema);

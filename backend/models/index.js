@@ -1,4 +1,6 @@
 module.exports = {
+  Tenant: require('./Tenant'),
+  Invoice: require('./Invoice'),
   User: require('./User'),
   Category: require('./Category'),
   Counter: require('./Counter'),

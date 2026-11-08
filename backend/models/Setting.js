@@ -9,4 +9,5 @@ const settingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+settingSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('Setting', settingSchema);

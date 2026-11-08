@@ -6,19 +6,22 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
 import { SocketProvider } from './context/SocketContext.jsx'
+import { TenantProvider } from './context/TenantContext.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <LanguageProvider>
-        <AuthProvider>
-          <SocketProvider>
-            <App />
-          </SocketProvider>
-          <Toaster position="top-right" toastOptions={{ duration: 3500, style: { fontSize: '14px' } }} />
-        </AuthProvider>
-      </LanguageProvider>
+      <TenantProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <App />
+            </SocketProvider>
+            <Toaster position="top-right" toastOptions={{ duration: 3500, style: { fontSize: '14px' } }} />
+          </AuthProvider>
+        </LanguageProvider>
+      </TenantProvider>
     </BrowserRouter>
   </StrictMode>,
 )

@@ -12,6 +12,7 @@ const { listComplaints, statusCounts } = require('../utils/complaintQuery');
 const { allowedNextStatuses, STATUS_LABELS } = require('../utils/workflow');
 const { computeDueDates, slaUpdateFor } = require('../utils/sla');
 const { resolvePlace } = require('../utils/locations');
+const { assertComplaintQuota } = require('../utils/planLimits');
 const { loadAccessibleComplaint, isOwner, isAssignedStaff, assertObjectId, canAccessComplaint } = require('../utils/access');
 
 const EDITABLE_STATUSES = ['submitted', 'needs_information'];
@@ -58,6 +59,7 @@ function permissionsFor(user, complaint, hasFeedback) {
 
 // POST /api/complaints  (multipart: fields + optional `images`)
 exports.create = async (req, res) => {
+  await assertComplaintQuota(); // enforce the tenant's monthly plan limit
   const { title, description, category, priority = 'medium' } = req.body;
   const categoryDoc = await getActiveCategory(category);
   verifyImages(req.files); // reject bad files before anything is written

@@ -16,4 +16,5 @@ const feedbackSchema = new mongoose.Schema(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
+feedbackSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('Feedback', feedbackSchema);

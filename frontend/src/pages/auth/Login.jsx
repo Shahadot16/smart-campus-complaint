@@ -53,15 +53,20 @@ export default function Login() {
 
   async function onSubmit(e) {
     e.preventDefault()
+    // Read straight from the inputs so browser autofill (which doesn't always
+    // fire React's onChange) can't submit empty credentials.
+    const email = (e.currentTarget.email?.value ?? form.email).trim()
+    // Trim the password too — browser autofill sometimes appends a stray space.
+    const password = (e.currentTarget.password?.value ?? form.password).trim()
     const errs = {}
-    if (!form.email.trim()) errs.email = 'Email is required'
-    if (!form.password) errs.password = 'Password is required'
+    if (!email) errs.email = 'Email is required'
+    if (!password) errs.password = 'Password is required'
     setErrors(errs)
     if (Object.keys(errs).length) return
 
     setSubmitting(true)
     try {
-      const result = await login({ email: form.email.trim(), password: form.password })
+      const result = await login({ email, password })
       if (result.twoFactorRequired) {
         setChallenge(result.challengeToken)
         setCode('')
@@ -167,6 +172,7 @@ export default function Login() {
         <Field label={t('Email')} htmlFor="email" error={errors.email}>
           <input
             id="email"
+            name="email"
             type="email"
             autoComplete="email"
             className={`input ${errors.email ? 'input-error' : ''}`}
@@ -190,6 +196,7 @@ export default function Login() {
           <div className="relative">
             <input
               id="password"
+              name="password"
               type={showPw ? 'text' : 'password'}
               autoComplete="current-password"
               className={`input pr-10 ${errors.password ? 'input-error' : ''}`}

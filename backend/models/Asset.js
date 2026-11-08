@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 // A physical item on campus (AC, projector, oscilloscope...) whose repairs are tracked.
 const assetSchema = new mongoose.Schema(
   {
-    code: { type: String, required: true, unique: true, uppercase: true, trim: true, maxlength: 24 },
+    code: { type: String, required: true, uppercase: true, trim: true, maxlength: 24 },
     name: { type: String, required: true, trim: true, maxlength: 100 },
     type: { type: String, required: true, trim: true, maxlength: 40 },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
@@ -20,4 +20,6 @@ const assetSchema = new mongoose.Schema(
 
 assetSchema.index({ location: 1 });
 
+assetSchema.plugin(require('./tenantPlugin'));
+assetSchema.index({ tenantId: 1, code: 1 }, { unique: true });
 module.exports = mongoose.model('Asset', assetSchema);

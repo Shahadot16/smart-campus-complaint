@@ -5,6 +5,7 @@ const config = require('../config/env');
 const university = require('../config/university');
 const { User, Session, AuthToken } = require('../models');
 const ApiError = require('../utils/ApiError');
+const { assertUserQuota } = require('../utils/planLimits');
 const { sendSuccess } = require('../utils/response');
 const { randomToken, hashToken } = require('../utils/tokens');
 const { sendMail, button, isRealMail } = require('../utils/mailer');
@@ -34,9 +35,11 @@ function clearAuthCookies(res) {
 }
 
 function setAccessCookie(res, user, sessionId) {
-  const token = jwt.sign({ sub: String(user._id), role: user.role, sid: String(sessionId) }, config.jwtSecret, {
-    expiresIn: config.accessTokenTtl,
-  });
+  const token = jwt.sign(
+    { sub: String(user._id), role: user.role, sid: String(sessionId), tid: user.tenantId ? String(user.tenantId) : undefined },
+    config.jwtSecret,
+    { expiresIn: config.accessTokenTtl }
+  );
   const { exp } = jwt.decode(token);
   res.cookie(config.cookieName, token, { ...cookieOptions(), maxAge: exp * 1000 - Date.now() });
 }
@@ -70,6 +73,7 @@ function profile(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    tenantId: user.tenantId || null,
     studentId: user.studentId || null,
     department: user.department,
     phone: user.phone,
@@ -82,6 +86,10 @@ function profile(user) {
     lastLoginAt: user.lastLoginAt,
   };
 }
+
+// Reused by the super-admin controller to issue sessions the same secure way.
+module.exports.startSession = startSession;
+module.exports.profile = profile;
 
 /* --------------------------- Email tokens --------------------------- */
 
@@ -125,6 +133,7 @@ exports.register = async (req, res) => {
     return res.status(403).json({ success: false, message: 'Public registration is disabled on this demo. Please use a demo account.' });
   }
   const { name, email, password, studentId, department, phone } = req.body;
+  await assertUserQuota(); // enforce the tenant's plan user limit
 
   const existing = await User.findOne({ $or: [{ email }, { studentId }] }).lean();
   if (existing) {
@@ -239,6 +248,8 @@ exports.refresh = async (req, res) => {
 
 // GET /api/auth/me
 exports.me = async (req, res) => {
+  // Super admins live in the separate platform portal, not the tenant app.
+  if (req.user.role === 'super_admin') throw ApiError.unauthorized();
   sendSuccess(res, { data: { user: profile(req.user) } });
 };
 

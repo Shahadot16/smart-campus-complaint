@@ -1,14 +1,24 @@
 /**
- * Demo data: categories, admin/staff/student accounts and sample complaints.
+ * Demo data for the multi-tenant platform:
+ *   - one super admin (platform owner)
+ *   - two universities (tenants), each with its own isolated users, categories,
+ *     locations, assets, inventory and complaints.
+ *
  *   npm run seed            -> seed only if the database is empty
  *   npm run seed -- --reset -> wipe all collections and reseed
- * Admin credentials can be overridden with SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
  */
-const { User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart, StockMovement, WorkOrder, Setting, Vote } = require('../models');
+const {
+  Tenant, Invoice, User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification,
+  Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart,
+  StockMovement, WorkOrder, Setting, Vote,
+} = require('../models');
 const { computeDueDates } = require('./sla');
+const { runAsTenant, getTenantId } = require('./tenantContext');
 const university = require('../config/university');
+const { getPlan } = require('../config/plans');
 
 const DEMO_PASSWORDS = { admin: 'Admin@123', staff: 'Staff@123', student: 'Student@123', dept_head: 'Head@123' };
+const SUPER_ADMIN = { name: 'Platform Owner', email: 'super@smartcampus.app', password: 'Super@123' };
 
 const CATEGORIES = [
   ['Network & IT', 'Wi-Fi, LAN, internet, lab computers and software'],
@@ -21,13 +31,7 @@ const CATEGORIES = [
   ['Safety & Security', 'Doors, locks, CCTV, fire safety and hazards'],
 ];
 
-const DOMAIN = university.emailDomain;
-
-/*
- * Sample campus layout for the engineering faculty. Building names and positions are
- * placeholders around the IUBAT campus centre — admins can rename/move them in the app.
- * [name, code, department, [lat offset, lng offset], { floorName: [rooms] }]
- */
+// [name, code, department, [lat offset, lng offset], { floorName: [rooms] }]
 const CAMPUS = [
   ['Main Academic Building', 'MAB', 'EEE', [0.0004, -0.0006], {
     '2nd floor': ['Room 210', 'Room 215'],
@@ -49,8 +53,17 @@ const CAMPUS = [
   ['Central Cafeteria', 'CAF', '', [-0.0006, -0.0011], {}],
 ];
 
-async function seedLocations() {
-  const { lat, lng } = university.location;
+const day = 24 * 60 * 60 * 1000;
+const ago = (days, hours = 0) => new Date(Date.now() - days * day - hours * 36e5);
+
+async function makeUser(data, password) {
+  const user = new User({ emailVerified: true, ...data });
+  await user.setPassword(password);
+  return user.save();
+}
+
+async function seedLocations(center) {
+  const { lat, lng } = center;
   const places = {};
   for (const [name, code, department, [dLat, dLng], floors] of CAMPUS) {
     const b = await Location.create({ name, code, type: 'building', department, geo: { lat: lat + dLat, lng: lng + dLng } });
@@ -70,48 +83,25 @@ async function seedLocations() {
   return places;
 }
 
-const day = 24 * 60 * 60 * 1000;
-const ago = (days, hours = 0) => new Date(Date.now() - days * day - hours * 36e5);
-
-async function makeUser(data, password) {
-  const user = new User({ emailVerified: true, ...data });
-  await user.setPassword(password);
-  return user.save();
-}
-
-async function seed() {
-  await Department.insertMany(university.departments);
-  const places = await seedLocations();
+/**
+ * Builds a full set of demo content for ONE tenant. Must be called inside that
+ * tenant's context (runAsTenant), so every document is stamped with its tenantId.
+ */
+async function buildTenantContent(profile) {
+  const DOMAIN = profile.emailDomain;
+  await Department.insertMany(profile.departments.map((d) => ({ code: d.code, name: d.name, programs: d.programs, url: d.url })));
+  const places = await seedLocations(profile.location);
   const cats = Object.fromEntries(
     (await Category.insertMany(CATEGORIES.map(([name, description]) => ({ name, description })))).map((c) => [c.name, c])
   );
 
-  const admin = await makeUser(
-    { name: 'Facilities Admin', email: process.env.SEED_ADMIN_EMAIL || `admin@${DOMAIN}`, role: 'admin', department: 'Facilities Office' },
-    process.env.SEED_ADMIN_PASSWORD || DEMO_PASSWORDS.admin
-  );
-  const staff1 = await makeUser(
-    { name: 'Rahim Uddin', email: `staff@${DOMAIN}`, role: 'staff', department: 'Electrical & IT Maintenance', phone: '+8801700000001' },
-    DEMO_PASSWORDS.staff
-  );
-  const staff2 = await makeUser(
-    { name: 'Karim Hossain', email: `staff2@${DOMAIN}`, role: 'staff', department: 'Civil & Plumbing Maintenance', phone: '+8801700000002' },
-    DEMO_PASSWORDS.staff
-  );
-  const student = await makeUser(
-    { name: 'Nusrat Jahan', email: `student@${DOMAIN}`, studentId: '22103001', role: 'student', department: 'CSE' },
-    DEMO_PASSWORDS.student
-  );
-  const cseHead = await makeUser(
-    { name: 'Dr. Farhana Islam', email: `cse.head@${DOMAIN}`, role: 'dept_head', department: 'CSE', phone: '+8801700000010' },
-    DEMO_PASSWORDS.dept_head
-  );
-  await makeUser(
-    { name: 'Dr. Mahbub Alam', email: `eee.head@${DOMAIN}`, role: 'dept_head', department: 'EEE', phone: '+8801700000011' },
-    DEMO_PASSWORDS.dept_head
-  );
+  const admin = await makeUser({ name: 'Facilities Admin', email: `admin@${DOMAIN}`, role: 'admin', department: 'Facilities Office' }, DEMO_PASSWORDS.admin);
+  const staff1 = await makeUser({ name: 'Rahim Uddin', email: `staff@${DOMAIN}`, role: 'staff', department: 'Electrical & IT Maintenance', phone: '+8801700000001' }, DEMO_PASSWORDS.staff);
+  const staff2 = await makeUser({ name: 'Karim Hossain', email: `staff2@${DOMAIN}`, role: 'staff', department: 'Civil & Plumbing Maintenance', phone: '+8801700000002' }, DEMO_PASSWORDS.staff);
+  const student = await makeUser({ name: 'Nusrat Jahan', email: `student@${DOMAIN}`, studentId: '22103001', role: 'student', department: 'CSE' }, DEMO_PASSWORDS.student);
+  const cseHead = await makeUser({ name: 'Dr. Farhana Islam', email: `cse.head@${DOMAIN}`, role: 'dept_head', department: 'CSE', phone: '+8801700000010' }, DEMO_PASSWORDS.dept_head);
+  await makeUser({ name: 'Dr. Mahbub Alam', email: `eee.head@${DOMAIN}`, role: 'dept_head', department: 'EEE', phone: '+8801700000011' }, DEMO_PASSWORDS.dept_head);
 
-  // Staff work profiles for smart assignment.
   const bld = (name) => places[name]._id;
   staff1.staffProfile = {
     skills: ['Electrical', 'Network & IT', 'Lab Equipment', 'AC & Ventilation'].map((c) => cats[c]._id),
@@ -124,10 +114,9 @@ async function seed() {
     maxOpenTasks: 6,
   };
   await Promise.all([staff1.save(), staff2.save()]);
-  // Cleaning requests are routed automatically.
   await Category.updateOne({ _id: cats.Cleaning._id }, { autoAssign: true });
 
-  // Assets [code, name, type, category, building, room, serial, purchased (months ago), warranty months]
+  // Assets [code, name, type, category, building, room, serial, months ago, warranty months]
   const ASSETS = [
     ['AST-OSC-04', 'Oscilloscope (Bench 4)', 'Oscilloscope', 'Lab Equipment', 'Engineering Building', 'EEE Electronics Lab', 'TDS-2024-8841', 30, 36],
     ['AST-RTR-L3', 'Lab router — CSE Lab 3', 'Network router', 'Network & IT', 'Engineering Building', 'CSE Lab 3', 'RB4011-77A2', 14, 24],
@@ -149,7 +138,7 @@ async function seed() {
     });
   }
 
-  // Spare parts [sku, name, unit, qty, min, unit cost BDT]
+  // Spare parts [sku, name, unit, qty, min, unit cost]
   const PARTS = [
     ['CAP-25UF', 'Fan capacitor 2.5µF', 'pcs', 24, 10, 120],
     ['LED-TUBE-20W', 'LED tube light 20W', 'pcs', 6, 10, 450],
@@ -162,17 +151,13 @@ async function seed() {
   ];
   const parts = {};
   for (const [sku, name, unit, quantity, minQuantity, unitCost] of PARTS) {
-    parts[sku] = await SparePart.create({ sku, name, unit, quantity, minQuantity, unitCost, supplier: 'Uttara Electric Supply' });
+    parts[sku] = await SparePart.create({ sku, name, unit, quantity, minQuantity, unitCost, supplier: 'Local Electric Supply' });
     await StockMovement.create({ part: parts[sku]._id, type: 'in', quantity, unitCost, by: admin._id, note: 'Opening stock' });
   }
 
-  const student2 = await makeUser(
-    { name: 'Tanvir Ahmed', email: `student2@${DOMAIN}`, studentId: '22205014', role: 'student', department: 'EEE' },
-    DEMO_PASSWORDS.student
-  );
+  const student2 = await makeUser({ name: 'Tanvir Ahmed', email: `student2@${DOMAIN}`, studentId: '22205014', role: 'student', department: 'EEE' }, DEMO_PASSWORDS.student);
 
-  // [student, category, title, description, building, room, priority, final status, staff, days ago]
-  // Minimal demo: two complaints so you can add more and test the flows yourself.
+  // [student, category, title, description, building, room, priority, final status, staff, days ago, assetCode]
   const samples = [
     [student, 'Network & IT', 'Lab Wi-Fi is not working', 'Several computers in the CSE software lab cannot connect to the internet since Monday morning.', 'Engineering Building', 'CSE Lab 3', 'high', 'in_progress', staff1, 3, 'AST-RTR-L3'],
     [student, 'Lab Equipment', 'Oscilloscope not powering on', 'Bench 4 oscilloscope in the electronics lab does not turn on, lab work is blocked.', 'Engineering Building', 'EEE Electronics Lab', 'high', 'submitted', null, 0, 'AST-OSC-04'],
@@ -190,8 +175,8 @@ async function seed() {
   };
   const notes = {
     under_review: 'Reviewed by admin',
-    needs_information: 'Please share a photo of the damaged lock and the exact time you noticed it.',
-    rejected: 'This AC is under the vendor maintenance contract. The vendor has been informed directly.',
+    needs_information: 'Please share a photo and the exact time you noticed it.',
+    rejected: 'Handled under the vendor maintenance contract.',
     in_progress: 'Started working on the issue',
     resolved: 'Issue fixed and verified on site.',
     closed: 'Student confirmed the resolution',
@@ -218,7 +203,6 @@ async function seed() {
       status: finalStatus,
       assignedStaff: staff?._id || null,
       resolutionNote: ['resolved', 'closed'].includes(finalStatus) ? notes.resolved : '',
-      rejectionReason: finalStatus === 'rejected' ? notes.rejected : '',
       createdAt: created,
     });
 
@@ -238,25 +222,13 @@ async function seed() {
     await ComplaintStatusHistory.insertMany(history.map((h) => ({ ...h, complaint: complaint._id, type: 'status' })));
     complaint.updatedAt = new Date(t);
     await complaint.save({ timestamps: false });
-
-    if (finalStatus === 'closed') {
-      await Feedback.create({
-        complaint: complaint._id,
-        student: owner._id,
-        rating: seq < 5 ? 5 : 4,
-        comment: seq < 5 ? 'Quick and professional work. Thank you!' : 'Fixed well, took a little longer than expected.',
-      });
-    }
   }
-  await Counter.findOneAndUpdate({ _id: `complaint-${year}` }, { seq }, { upsert: true });
+  await Counter.findOneAndUpdate({ _id: `complaint-${getTenantId()}-${year}` }, { seq }, { upsert: true });
 
-  // student2 is affected by student's Wi-Fi problem too.
-  const wifiVote = await Complaint.findOne({ asset: assets['AST-RTR-L3']._id });
-  await Vote.create({ complaint: wifiVote._id, user: student2._id });
-  await Complaint.updateOne({ _id: wifiVote._id }, { votes: 1 });
-
-  // Repair records on the router complaint: parts used and a work order awaiting the CSE head.
+  // student2 is affected by the Wi-Fi problem too (a "me too" vote) + a work order awaiting approval.
   const wifi = await Complaint.findOne({ asset: assets['AST-RTR-L3']._id });
+  await Vote.create({ complaint: wifi._id, user: student2._id });
+  await Complaint.updateOne({ _id: wifi._id }, { votes: 1 });
   for (const [sku, qty] of [['CAT6-M', 20], ['RJ45', 8]]) {
     const p = parts[sku];
     await SparePart.updateOne({ _id: p._id }, { $inc: { quantity: -qty } });
@@ -273,33 +245,106 @@ async function seed() {
     requiredApprovals: ['dept_head'],
   });
   await Notification.create({ user: cseHead._id, title: `Approval needed: ${wifi.trackingCode}`, message: 'Rahim Uddin requests ৳18,500 — replace the faulty lab switch.', complaint: wifi._id });
-
   await Notification.insertMany([
-    { user: student._id, title: `Welcome to ${university.shortName} Smart Campus`, message: 'Report campus issues and track their progress here.' },
+    { user: student._id, title: `Welcome to ${profile.shortName} Smart Campus`, message: 'Report campus issues and track their progress here.' },
     { user: staff1._id, title: 'You have new assignments', message: 'Check your dashboard for assigned complaints.' },
   ]);
+}
 
-  return { admin, staff1, staff2, student, student2, cseHead, assets, parts };
+/** Creates a tenant, fills it with demo content, and sets up its subscription. */
+async function createTenant(data, superAdmin) {
+  const tenant = await Tenant.create({ ...data, createdBy: superAdmin._id });
+  await runAsTenant(tenant._id, () => buildTenantContent(data));
+
+  const plan = getPlan(tenant.plan);
+  if (plan.price > 0) {
+    // A paid plan starts with an active subscription and one paid invoice.
+    await runAsTenant(tenant._id, async () => {
+      const now = new Date();
+      const end = new Date(now.getTime() + 30 * day);
+      await Invoice.create({
+        number: `INV-${now.getFullYear()}-0001`,
+        plan: plan.key,
+        planName: plan.name,
+        amount: plan.price,
+        period: { start: now, end },
+        status: 'paid',
+        paidAt: now,
+        method: 'card',
+      });
+      await Counter.findOneAndUpdate({ _id: `invoice-${tenant._id}` }, { seq: 1 }, { upsert: true });
+    });
+    tenant.subscription = { status: 'active', currentPeriodEnd: new Date(Date.now() + 30 * day) };
+    await tenant.save();
+  }
+  return tenant;
+}
+
+const TENANTS = [
+  {
+    name: university.name,
+    shortName: university.shortName,
+    slug: 'iubat',
+    emailDomain: university.emailDomain,
+    website: university.website,
+    address: university.address,
+    phone: university.phone,
+    location: university.location,
+    plan: 'pro',
+    departments: university.departments,
+    branding: {
+      logo: '/brand/iubat-logo.png',
+      logoWide: '/brand/iubat-logo-name.png',
+      primaryColor: '#0a4029',
+      accentColor: '#16a34a',
+      tagline: 'Complaint & maintenance portal',
+    },
+  },
+  {
+    name: 'Daffodil International University',
+    shortName: 'DIU',
+    slug: 'daffodil',
+    emailDomain: 'diu.edu',
+    website: 'https://daffodilvarsity.edu.bd',
+    address: 'Daffodil Smart City, Birulia, Savar, Dhaka-1216, Bangladesh',
+    phone: '+8809617901212',
+    location: { lat: 23.8768, lng: 90.3206 },
+    plan: 'free',
+    departments: university.departments,
+    branding: {
+      logo: '',
+      logoWide: '',
+      primaryColor: '#1e3a8a',
+      accentColor: '#2563eb',
+      tagline: 'Campus complaint & maintenance',
+    },
+  },
+];
+
+async function seed() {
+  const superAdmin = await makeUser({ name: SUPER_ADMIN.name, email: SUPER_ADMIN.email, role: 'super_admin' }, SUPER_ADMIN.password);
+  for (const data of TENANTS) await createTenant(data, superAdmin);
+  return { superAdmin };
 }
 
 async function seedIfEmpty() {
-  if (await User.exists({})) return false;
+  if (await Tenant.exists({})) return false;
   await seed();
-  console.log('Demo data created:');
-  console.log(`  Admin   -> ${process.env.SEED_ADMIN_EMAIL || `admin@${DOMAIN}`} / ${process.env.SEED_ADMIN_PASSWORD ? '(from env)' : DEMO_PASSWORDS.admin}`);
-  console.log(`  Staff   -> staff@${DOMAIN} / ${DEMO_PASSWORDS.staff}`);
-  console.log(`  Student -> student@${DOMAIN} / ${DEMO_PASSWORDS.student}`);
-  console.log(`  Dept head -> cse.head@${DOMAIN} / ${DEMO_PASSWORDS.dept_head}`);
+  console.log('Demo data created (multi-tenant):');
+  console.log(`  Super Admin -> ${SUPER_ADMIN.email} / ${SUPER_ADMIN.password}`);
+  for (const t of TENANTS) {
+    console.log(`  [${t.shortName}]  admin@${t.emailDomain} / ${DEMO_PASSWORDS.admin}  ·  student@${t.emailDomain} / ${DEMO_PASSWORDS.student}  (slug: ${t.slug})`);
+  }
   return true;
 }
 
 async function reset() {
   await Promise.all(
-    [User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart, StockMovement, WorkOrder, Setting, Vote].map((m) => m.deleteMany({}))
+    [Tenant, Invoice, User, Category, Complaint, ComplaintStatusHistory, Feedback, Counter, Attachment, Notification, Department, Session, AuthToken, AuditLog, Message, SlaPolicy, Location, JobRun, Asset, SparePart, StockMovement, WorkOrder, Setting, Vote].map((m) => m.deleteMany({}))
   );
 }
 
-module.exports = { seed, seedIfEmpty, reset, DEMO_PASSWORDS };
+module.exports = { seed, seedIfEmpty, reset, buildTenantContent, createTenant, CATEGORIES, DEMO_PASSWORDS, SUPER_ADMIN };
 
 if (require.main === module) {
   const { connectDB, disconnectDB } = require('../config/db');
@@ -310,7 +355,7 @@ if (require.main === module) {
       console.log('Database cleared.');
     }
     const seeded = await seedIfEmpty();
-    if (!seeded) console.log('Database already has users. Use "npm run seed -- --reset" to start fresh.');
+    if (!seeded) console.log('Database already has tenants. Use "npm run seed -- --reset" to start fresh.');
     await disconnectDB();
   })().catch(async (err) => {
     console.error(err);

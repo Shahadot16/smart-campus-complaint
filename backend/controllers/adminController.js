@@ -8,6 +8,7 @@ const { sendSuccess, getPagination, buildMeta, escapeRegex } = require('../utils
 const { changeStatus, assignStaff, commitChange } = require('../utils/complaintService');
 const { listComplaints, statusCounts, buildFilter } = require('../utils/complaintQuery');
 const { loadAccessibleComplaint, assertObjectId } = require('../utils/access');
+const { assertUserQuota } = require('../utils/planLimits');
 const { profile } = require('./authController');
 
 /* ----------------------------- Complaints ----------------------------- */
@@ -128,6 +129,7 @@ exports.listStaff = async (_req, res) => {
 
 // POST /api/admin/users — trusted admin workflow for creating staff/admin accounts
 exports.createUser = async (req, res) => {
+  await assertUserQuota(); // enforce the tenant's plan user limit
   const { name, email, password, role, department, phone } = req.body;
   if (await User.exists({ email })) throw ApiError.conflict('Email already exists');
   const user = new User({ name, email, role, department, phone });

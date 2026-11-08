@@ -1,13 +1,31 @@
 const { Category, Notification, Department } = require('../models');
-const university = require('../config/university');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess, getPagination, buildMeta } = require('../utils/response');
 const { assertObjectId } = require('../utils/access');
 
-// GET /api/meta — public university profile and active departments
-exports.meta = async (_req, res) => {
+// GET /api/meta — the current tenant's (university's) profile, branding and departments
+exports.meta = async (req, res) => {
   const departments = await Department.find({ isActive: true }).sort({ code: 1 }).select('code name programs url').lean();
-  const { departments: _seed, ...profile } = university;
+  const t = req.tenant;
+  const profile = t
+    ? {
+        name: t.name,
+        shortName: t.shortName,
+        slug: t.slug,
+        website: t.website,
+        emailDomain: t.emailDomain,
+        address: t.address,
+        phone: t.phone,
+        location: t.location,
+        branding: t.branding,
+        plan: t.plan,
+      }
+    : {
+        // Platform default (no tenant resolved, e.g. the super-admin portal)
+        name: 'Smart Campus',
+        shortName: 'Smart Campus',
+        branding: { logo: '/brand/iubat-logo.png', logoWide: '/brand/iubat-logo-name.png', primaryColor: '#0a4029', accentColor: '#16a34a', tagline: 'Multi-campus complaint & maintenance platform' },
+      };
   sendSuccess(res, { data: { university: profile, departments } });
 };
 

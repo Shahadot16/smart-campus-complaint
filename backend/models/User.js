@@ -5,7 +5,7 @@ const { ROLES } = require('../utils/constants');
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 120 },
+    email: { type: String, required: true, lowercase: true, trim: true, maxlength: 120 },
     passwordHash: { type: String, required: true, select: false },
     studentId: { type: String, trim: true, maxlength: 30 },
     department: { type: String, trim: true, maxlength: 80, default: '' },
@@ -42,9 +42,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// studentId is optional but must be unique when present.
+// Email is unique PER tenant (the same email may exist in two universities);
+// super admins have no tenant, so their emails are unique among tenantId:null.
+userSchema.index({ tenantId: 1, email: 1 }, { unique: true });
+// studentId is optional but must be unique within a tenant when present.
 userSchema.index(
-  { studentId: 1 },
+  { tenantId: 1, studentId: 1 },
   { unique: true, partialFilterExpression: { studentId: { $type: 'string' } } }
 );
 userSchema.index({ role: 1, isActive: 1 });
@@ -66,4 +69,5 @@ userSchema.set('toJSON', {
   },
 });
 
+userSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('User', userSchema);

@@ -1,15 +1,18 @@
 const { Complaint, ComplaintStatusHistory, Counter, User, Asset } = require('../models');
 const { withTransaction } = require('../config/db');
+const { getTenantId } = require('./tenantContext');
 const ApiError = require('./ApiError');
 const notify = require('./notify');
 const realtime = require('./realtime');
 const { slaUpdateFor } = require('./sla');
 const { canTransition, NOTE_REQUIRED, STATUS_LABELS, isReopen } = require('./workflow');
 
-/** Generates a unique, human-friendly tracking code such as CMP-2026-0001. */
+/** Generates a tracking code such as CMP-2026-0001, with a per-tenant sequence. */
 async function generateTrackingCode(session) {
   const year = new Date().getFullYear();
-  const seq = await Counter.next(`complaint-${year}`, session);
+  const tid = getTenantId();
+  const key = tid ? `complaint-${tid}-${year}` : `complaint-${year}`;
+  const seq = await Counter.next(key, session);
   return `CMP-${year}-${String(seq).padStart(4, '0')}`;
 }
 

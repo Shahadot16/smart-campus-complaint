@@ -17,4 +17,5 @@ const stockMovementSchema = new mongoose.Schema(
 stockMovementSchema.index({ part: 1, createdAt: -1 });
 stockMovementSchema.index({ complaint: 1 });
 
+stockMovementSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('StockMovement', stockMovementSchema);

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getTenantSlug } from '../utils/tenant'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -7,6 +8,16 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   timeout: 20000,
+})
+
+// Tell the API which university (tenant) this request belongs to. In production
+// the subdomain carries it; in local dev it comes from the chosen university.
+api.interceptors.request.use((config) => {
+  if (!String(config.url || '').startsWith('/super')) {
+    const slug = getTenantSlug()
+    if (slug) config.headers['X-Tenant'] = slug
+  }
+  return config
 })
 
 let onUnauthorized = null
@@ -176,6 +187,32 @@ export const locationApi = {
   tree: (params) => data(api.get('/locations', { params })),
   stats: () => data(api.get('/locations/stats')),
   byCode: (code) => data(api.get(`/locations/code/${encodeURIComponent(code)}`)),
+}
+
+export const superApi = {
+  publicTenants: () => data(api.get('/super/public-tenants')),
+  login: (body) => data(api.post('/super/login', body)),
+  me: () => data(api.get('/super/me')),
+  logout: () => data(api.post('/super/logout')),
+  stats: () => data(api.get('/super/stats')),
+  billing: () => data(api.get('/super/billing')),
+  tenants: () => data(api.get('/super/tenants')),
+  createTenant: (body) => data(api.post('/super/tenants', body)),
+  updateTenant: (id, body) => data(api.patch(`/super/tenants/${id}`, body)),
+}
+
+export const billingApi = {
+  plans: () => data(api.get('/billing/plans')),
+  subscription: () => data(api.get('/billing/subscription')),
+  subscribe: (plan) => data(api.post('/billing/subscribe', { plan })),
+  invoices: () => data(api.get('/billing/invoices')),
+  invoice: (id) => data(api.get(`/billing/invoices/${id}`)),
+  pay: (id, body) => data(api.post(`/billing/invoices/${id}/pay`, body)),
+}
+
+export const settingsApi = {
+  getBranding: () => data(api.get('/settings/branding')),
+  updateBranding: (body) => data(api.patch('/settings/branding', body)),
 }
 
 export const commonApi = {

@@ -18,4 +18,5 @@ auditLogSchema.index({ createdAt: -1 });
 auditLogSchema.index({ actor: 1, createdAt: -1 });
 auditLogSchema.index({ entity: 1, entityId: 1 });
 
+auditLogSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('AuditLog', auditLogSchema);

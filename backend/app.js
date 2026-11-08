@@ -27,8 +27,8 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: false, limit: '100kb' }));
+app.use(express.json({ limit: '1mb' })); // 1mb leaves room for small base64 logo uploads
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(cookieParser());
 if (!config.isTest) app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 
@@ -52,6 +52,13 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+// Resolve the tenant (university) for every API request and run the rest of the
+// request inside its context, so all tenant-scoped queries are isolated.
+app.use('/api', require('./middleware/tenant'));
+
+app.use('/api/super', require('./routes/superRoutes'));
+app.use('/api/billing', require('./routes/billingRoutes'));
+app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));

@@ -1,4 +1,4 @@
-const ROLES = Object.freeze({ STUDENT: 'student', ADMIN: 'admin', STAFF: 'staff', DEPT_HEAD: 'dept_head' });
+const ROLES = Object.freeze({ STUDENT: 'student', ADMIN: 'admin', STAFF: 'staff', DEPT_HEAD: 'dept_head', SUPER_ADMIN: 'super_admin' });
 
 const PRIORITIES = Object.freeze(['low', 'medium', 'high', 'critical']);
 

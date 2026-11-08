@@ -12,6 +12,7 @@ const slaPolicySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-slaPolicySchema.index({ priority: 1, category: 1 }, { unique: true });
+slaPolicySchema.index({ tenantId: 1, priority: 1, category: 1 }, { unique: true });
 
+slaPolicySchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('SlaPolicy', slaPolicySchema);

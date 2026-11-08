@@ -2,6 +2,8 @@ import {
   BarChart3,
   Boxes,
   Briefcase,
+  CreditCard,
+  Palette,
   KeyRound,
   Package,
   Receipt,
@@ -33,8 +35,9 @@ import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import ChatbotWidget from '../components/ChatbotWidget'
-import { Avatar } from '../components/ui'
+import { Avatar, BrandMark } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+import { useTenant } from '../context/TenantContext'
 import { LanguageSwitch, useLang } from '../context/LanguageContext'
 import { useSocket, useSocketEvent } from '../context/SocketContext'
 import { authApi, commonApi, errorMessage } from '../services/api'
@@ -61,6 +64,8 @@ const NAV = {
     { to: '/admin/sla', label: 'SLA & Jobs', icon: Timer },
     { to: '/admin/locations', label: 'Locations & QR', icon: MapPin },
     { to: '/map', label: 'Campus Map', icon: Map },
+    { to: '/admin/billing', label: 'Billing', icon: CreditCard },
+    { to: '/admin/settings', label: 'Branding & Settings', icon: Palette },
     { to: '/admin/roles', label: 'Roles & Permissions', icon: KeyRound },
     { to: '/admin/audit-log', label: 'Audit Log', icon: History },
   ],
@@ -94,8 +99,8 @@ function NavItem({ item, badge }) {
       className={({ isActive }) =>
         `group relative flex items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
           isActive
-            ? 'bg-linear-to-r from-emerald-500/30 to-emerald-500/5 text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08)]'
-            : 'text-slate-300/80 hover:translate-x-1 hover:bg-emerald-500/15 hover:text-white'
+            ? 'bg-linear-to-r from-brand-500/30 to-brand-500/5 text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08)]'
+            : 'text-slate-300/80 hover:translate-x-1 hover:bg-brand-500/15 hover:text-white'
         }`
       }
     >
@@ -103,18 +108,18 @@ function NavItem({ item, badge }) {
         <>
           {/* sliding indicator on the active item */}
           <span
-            className={`absolute top-1/2 left-0 h-5 -translate-y-1/2 rounded-r-full bg-linear-to-b from-emerald-400 to-brand-500 transition-all duration-300 ${isActive ? 'w-1 opacity-100 shadow-[0_0_10px_rgb(16_185_129_/_0.8)]' : 'w-0 opacity-0'}`}
+            className={`absolute top-1/2 left-0 h-5 -translate-y-1/2 rounded-r-full bg-linear-to-b from-brand-500 to-brand-600 transition-all duration-300 ${isActive ? 'w-1 opacity-100' : 'w-0 opacity-0'}`}
             aria-hidden="true"
           />
           {/* shine sweep on hover */}
           <span className="sheen" aria-hidden="true" />
           <Icon
-            className={`relative size-[18px] transition-all duration-200 group-hover:scale-110 ${isActive ? 'text-emerald-300' : 'group-hover:text-emerald-300'}`}
+            className={`relative size-[18px] transition-all duration-200 group-hover:scale-110 ${isActive ? 'text-brand-200' : 'group-hover:text-brand-200'}`}
             aria-hidden="true"
           />
           <span className="relative flex-1">{t(item.label)}</span>
           {badge > 0 && (
-            <span className="animate-pop-in relative rounded-full bg-linear-to-br from-emerald-400 to-brand-500 px-1.5 py-0.5 text-[10px] leading-none font-bold text-white shadow-[0_0_10px_rgb(16_185_129_/_0.6)]">
+            <span className="animate-pop-in relative rounded-full bg-linear-to-br from-brand-500 to-brand-600 px-1.5 py-0.5 text-[10px] leading-none font-bold text-white">
               {badge > 99 ? '99+' : badge}
             </span>
           )}
@@ -208,23 +213,34 @@ export default function AppLayout() {
   async function handleLogout() {
     await logout()
     toast.success('Signed out')
+    // In local dev (no subdomain), return to the university picker so you can switch.
+    if (!lockedToSubdomain) clearTenant()
     navigate('/login', { replace: true })
   }
 
+  const { tenant, clearTenant, lockedToSubdomain } = useTenant()
+  const branding = tenant?.branding || {}
   const items = NAV[user.role] || []
   const RoleIcon = { staff: Wrench, admin: ShieldCheck, dept_head: Briefcase }[user.role] || GraduationCap
 
   const sidebar = (
-    <div className="relative flex h-full flex-col overflow-hidden bg-[linear-gradient(168deg,#0b1120_0%,#111a2e_52%,#1b2540_100%)] px-3 py-5">
+    <div className="relative flex h-full flex-col overflow-hidden bg-linear-to-b from-navy-950 via-navy-900 to-navy-800 px-3 py-5">
       {/* soft drifting glow for depth */}
-      <div className="animate-glow-pulse pointer-events-none absolute -top-16 -right-12 size-52 rounded-full bg-emerald-500/25 blur-3xl" aria-hidden="true" />
+      <div className="animate-glow-pulse pointer-events-none absolute -top-16 -right-12 size-52 rounded-full bg-brand-500/30 blur-3xl" aria-hidden="true" />
       <div className="animate-aurora pointer-events-none absolute bottom-24 -left-16 size-48 rounded-full bg-brand-500/15 blur-3xl" aria-hidden="true" />
-      <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-emerald-500 via-brand-400 to-emerald-500" aria-hidden="true" />
+      <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-brand-500 via-brand-600 to-brand-500" aria-hidden="true" />
       <Link to="/" className="animate-fade-in-down relative mb-8 block px-2 transition-transform duration-200 hover:scale-[1.02]">
-        <img src="/brand/iubat-logo-name.png" alt="IUBAT" className="h-8 w-auto" />
-        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300 uppercase ring-1 ring-white/10">
+        {branding.logoWide ? (
+          <img src={branding.logoWide} alt={tenant?.shortName || 'Smart Campus'} className="h-8 w-auto object-contain" />
+        ) : (
+          <span className="flex items-center gap-2">
+            <BrandMark tenant={tenant} className="size-9" text="text-[11px]" />
+            <span className="text-lg font-bold text-white">{tenant?.shortName || 'Smart Campus'}</span>
+          </span>
+        )}
+        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-brand-200 uppercase ring-1 ring-white/10">
           <RoleIcon className="size-3.5" aria-hidden="true" />
-          Smart Campus · {ROLE_LABELS[user.role]}
+          {tenant?.shortName || 'Smart Campus'} · {ROLE_LABELS[user.role]}
         </span>
       </Link>
       <nav className="stagger relative -mr-1 flex-1 space-y-1 overflow-y-auto pr-1" aria-label="Main">
@@ -245,7 +261,7 @@ export default function AppLayout() {
         <LanguageSwitch className="text-brand-100 ring-white/20" />
       </div>
       <div className="relative mt-2 flex items-center gap-3 rounded-xl bg-white/6 p-3 ring-1 ring-white/5 transition-colors hover:bg-white/10">
-        <Avatar name={user.name} className="size-9 text-sm ring-2 ring-emerald-400/50" />
+        <Avatar name={user.name} className="size-9 text-sm ring-2 ring-brand-500/50" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{user.name}</p>
           <p className="truncate text-xs text-brand-200">{user.email}</p>
@@ -281,7 +297,7 @@ export default function AppLayout() {
           <Menu className="size-5" />
         </button>
         <span className="flex items-center gap-2 font-semibold text-navy-900">
-          <img src="/brand/iubat-logo.png" alt="" className="h-6 w-auto" /> IUBAT Smart Campus
+          <BrandMark tenant={tenant} className="size-6" text="text-[9px]" /> {tenant?.shortName || 'Smart Campus'}
         </span>
         <Link to="/notifications" className="relative btn-ghost p-2" aria-label="Notifications">
           <Bell className="size-5" />

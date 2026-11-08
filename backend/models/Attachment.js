@@ -15,4 +15,5 @@ const attachmentSchema = new mongoose.Schema(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
+attachmentSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('Attachment', attachmentSchema);

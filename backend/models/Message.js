@@ -13,4 +13,5 @@ const messageSchema = new mongoose.Schema(
 
 messageSchema.index({ complaint: 1, createdAt: 1 });
 
+messageSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('Message', messageSchema);

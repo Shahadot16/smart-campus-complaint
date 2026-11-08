@@ -236,6 +236,20 @@ export function Field({ label, error, hint, children, htmlFor, required }) {
   )
 }
 
+/** A university's logo, or a coloured monogram of its short name when it has none. */
+export function BrandMark({ tenant, className = 'size-12', text = 'text-sm' }) {
+  const b = tenant?.branding || {}
+  if (b.logo) {
+    return <img src={b.logo} alt={tenant?.shortName || ''} className={`${className} object-contain`} />
+  }
+  const initials = (tenant?.shortName || 'SC').replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase()
+  return (
+    <span className={`grid ${className} place-items-center rounded-2xl font-bold text-white ${text}`} style={{ background: b.primaryColor || '#0a4029' }}>
+      {initials}
+    </span>
+  )
+}
+
 export function Avatar({ name = '', className = 'size-9 text-sm' }) {
   const letters = name
     .split(/\s+/)

@@ -13,4 +13,5 @@ const notificationSchema = new mongoose.Schema(
 
 notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
 
+notificationSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('Notification', notificationSchema);

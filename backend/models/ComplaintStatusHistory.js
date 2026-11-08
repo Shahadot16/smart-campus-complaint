@@ -19,4 +19,5 @@ const historySchema = new mongoose.Schema(
 
 historySchema.index({ complaint: 1, createdAt: 1 });
 
+historySchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('ComplaintStatusHistory', historySchema, 'complaintStatusHistory');

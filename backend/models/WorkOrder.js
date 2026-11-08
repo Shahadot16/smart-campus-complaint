@@ -36,4 +36,5 @@ workOrderSchema.methods.nextApprover = function nextApprover() {
   return this.requiredApprovals[this.approvals.length] || null;
 };
 
+workOrderSchema.plugin(require('./tenantPlugin'));
 module.exports = mongoose.model('WorkOrder', workOrderSchema);

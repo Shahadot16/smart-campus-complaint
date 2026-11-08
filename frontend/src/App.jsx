@@ -41,6 +41,11 @@ const StudentDashboard = lazy(() => import('./pages/student/Dashboard'))
 const MyComplaints = lazy(() => import('./pages/student/MyComplaints'))
 const NewComplaint = lazy(() => import('./pages/student/NewComplaint'))
 const IssueBoard = lazy(() => import('./pages/student/IssueBoard'))
+const SuperLogin = lazy(() => import('./pages/super/SuperLogin'))
+const SuperDashboard = lazy(() => import('./pages/super/SuperDashboard'))
+const Billing = lazy(() => import('./pages/admin/Billing'))
+const Settings = lazy(() => import('./pages/admin/Settings'))
+const InvoiceReceipt = lazy(() => import('./pages/admin/InvoiceReceipt'))
 
 function HomeRedirect() {
   const { user, loading } = useAuth()
@@ -53,6 +58,10 @@ export default function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
+
+        {/* Platform super-admin portal — separate from the university apps */}
+        <Route path="/super/login" element={<SuperLogin />} />
+        <Route path="/super" element={<SuperDashboard />} />
 
         <Route element={<GuestRoute />}>
           <Route element={<AuthLayout />}>
@@ -71,6 +80,7 @@ export default function App() {
         {/* Full-page printable view, outside the app chrome */}
         <Route element={<ProtectedRoute roles={['admin']} />}>
           <Route path="/admin/locations/:id/qr" element={<QrSheet />} />
+          <Route path="/admin/billing/invoice/:id" element={<InvoiceReceipt />} />
         </Route>
 
         <Route element={<ProtectedRoute />}>
@@ -94,6 +104,8 @@ export default function App() {
               <Route path="/admin/inventory" element={<Inventory />} />
               <Route path="/admin/staff" element={<StaffProfiles />} />
               <Route path="/admin/roles" element={<Roles />} />
+              <Route path="/admin/billing" element={<Billing />} />
+              <Route path="/admin/settings" element={<Settings />} />
             </Route>
 
             <Route element={<ProtectedRoute roles={['dept_head']} />}>
